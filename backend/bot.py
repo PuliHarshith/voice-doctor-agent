@@ -5,6 +5,7 @@ Run: python bot.py  then open http://localhost:7860/client
 
 import os
 import sys
+import time
 from datetime import date
 
 from dotenv import load_dotenv
@@ -14,7 +15,7 @@ from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
 from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.vad.vad_analyzer import VADParams
-from pipecat.frames.frames import LLMRunFrame
+from pipecat.frames.frames import LLMRunFrame, TTSSpeakFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
@@ -104,6 +105,9 @@ async def bot(runner_args: RunnerArguments):
         # Free-tier first-token latency occasionally spikes to ~10s; re-issue instead of waiting.
         retry_on_timeout=True,
         retry_timeout_secs=4.0,
+        # After the retry, a stalled stream used to hang 20s in silence before erroring. Fail at 8s and
+        # let on_completion_timeout (below) recover out loud.
+        stream_idle_timeout_secs=8.0,
     )
 
     # Direct-function tools: Pipecat reads their schemas and registers them with the LLM.
@@ -148,6 +152,22 @@ async def bot(runner_args: RunnerArguments):
         pipeline,
         params=PipelineParams(enable_metrics=True, enable_usage_metrics=True),
     )
+
+    last_recovery = 0.0
+
+    @llm.event_handler("on_completion_timeout")
+    async def on_completion_timeout(service):
+        # Free-tier Gemini sometimes stalls. Never leave the caller in silence: apologise and ask the
+        # model again (the context already holds any tool result). At most once per 30s, so a Gemini
+        # outage can't loop "one moment" forever.
+        nonlocal last_recovery
+        if time.monotonic() - last_recovery < 30:
+            logger.error("LLM timed out again; giving up on this turn")
+            await task.queue_frames([TTSSpeakFrame("Sorry, I'm having trouble right now. Could you say that again?")])
+            return
+        last_recovery = time.monotonic()
+        logger.warning("LLM timed out; apologising and retrying")
+        await task.queue_frames([TTSSpeakFrame("Sorry, one moment."), LLMRunFrame()])
 
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
