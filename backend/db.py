@@ -58,6 +58,36 @@ def find_doctors(conn, query: str) -> list[sqlite3.Row]:
     return [d for d in all_doctors(conn) if q in d["name"].lower() or q in d["specialty"].lower()]
 
 
+def doctors_with_slots(conn) -> list[dict]:
+    """Every doctor with all upcoming slots, booked or free (for the dashboard)."""
+    today, now = _now()
+    doctors = {d["id"]: {**dict(d), "slots": []} for d in all_doctors(conn)}
+    for s in conn.execute(
+        """SELECT doctor_id, date, time, is_booked FROM slots
+           WHERE date > ? OR (date = ? AND time > ?) ORDER BY date, time""",
+        (today, today, now),
+    ):
+        doctors[s["doctor_id"]]["slots"].append(
+            {"date": s["date"], "time": s["time"], "is_booked": bool(s["is_booked"])}
+        )
+    return list(doctors.values())
+
+
+def all_appointments(conn) -> list[dict]:
+    rows = conn.execute(
+        """SELECT a.id, a.phone, a.doctor_id, d.name AS doctor, d.specialty, a.date, a.time,
+                  a.status, a.created_at
+           FROM appointments a JOIN doctors d ON d.id = a.doctor_id
+           ORDER BY a.created_at DESC, a.id DESC"""
+    )
+    return [dict(r) for r in rows]
+
+
+def get_appointment(conn, appointment_id: int) -> dict | None:
+    rows = [a for a in all_appointments(conn) if a["id"] == appointment_id]
+    return rows[0] if rows else None
+
+
 def free_slots(conn, doctor_id: int, date: str | None = None) -> list[sqlite3.Row]:
     """Unbooked future slots, optionally for one date."""
     today, now = _now()

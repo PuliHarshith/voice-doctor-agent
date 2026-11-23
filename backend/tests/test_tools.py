@@ -147,3 +147,22 @@ def test_cannot_cancel_someone_elses_appointment(tools):
     appt = call(tools.book, doctor="Iyer", date=TOMORROW, time="2:00 PM")["appointment_id"]
     other = make_tools(Session(phone="9000000000"))[3]
     assert "No upcoming" in call(other, appointment_id=appt)["error"]
+
+
+# --- events ---
+
+def test_book_and_cancel_publish_events_after_the_write(tools):
+    from events import bus
+    confirmed(tools)
+    with bus.subscribe() as q:
+        assert q.get_nowait()["type"] == "call_status"  # current status comes first
+        appt = call(tools.book, doctor="Iyer", date=TOMORROW, time="2:00 PM")["appointment_id"]
+        booked, slots = q.get_nowait(), q.get_nowait()
+        assert booked["type"] == "appointment_booked" and booked["appointment"]["id"] == appt
+        assert booked["appointment"]["status"] == "booked"  # row already exists in the DB
+        assert slots["type"] == "slots_changed" and slots["date"] == TOMORROW
+        call(tools.cancel)
+        assert q.get_nowait()["appointment"]["status"] == "cancelled"
+        assert q.get_nowait()["type"] == "slots_changed"
+        call(tools.book, doctor="Iyer", date=TOMORROW, time="3 AM")  # failed booking: no events
+        assert q.empty()

@@ -12,6 +12,7 @@ from pipecat.processors.aggregators.llm_context import standard_message_text
 from pipecat.services.llm_service import FunctionCallParams
 
 import db
+from events import bus
 from phone import normalise, spoken_to_digits
 
 YES = {"yes", "yeah", "yep", "yup", "ya", "yah", "correct", "right", "exactly", "sure", "haan", "han",
@@ -181,6 +182,9 @@ def make_tools(session: Session) -> list:
                     "error": f"{d['name']} has no open slot at {speak_time(hhmm)} on {iso}.",
                     "other_times_that_day": free,
                 })
+            # published only now that the row is committed
+            bus.publish("appointment_booked", appointment=db.get_appointment(conn, appt_id))
+            bus.publish("slots_changed", doctor_id=d["id"], date=iso)
             await params.result_callback({
                 "booked": True, "appointment_id": appt_id, "doctor": d["name"], "date": iso,
                 "day": day_name(iso), "time": speak_time(hhmm), "phone": session.phone,
@@ -214,6 +218,9 @@ def make_tools(session: Session) -> list:
             if match is None or not db.cancel(conn, appointment_id, session.phone):
                 return await params.result_callback({"error": f"No upcoming appointment {appointment_id} for this "
                                                               "phone number.", "appointments": listed})
+            appt = db.get_appointment(conn, appointment_id)
+            bus.publish("appointment_cancelled", appointment=appt)
+            bus.publish("slots_changed", doctor_id=appt["doctor_id"], date=appt["date"])
             await params.result_callback({"cancelled": True, **match})
         finally:
             conn.close()

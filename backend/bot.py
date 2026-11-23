@@ -27,8 +27,11 @@ from pipecat.services.google.llm import GoogleLLMService
 from pipecat.transports.base_transport import TransportParams
 
 import db
+from api import router as api_router
+from events import bus
 from seed import seed_if_empty
 from tools import Session, make_tools
+from transcript import AssistantTranscript, UserTranscript
 
 load_dotenv(override=True)
 
@@ -91,8 +94,10 @@ async def bot(runner_args: RunnerArguments):
         [
             transport.input(),
             stt,
+            UserTranscript(),  # user text after STT
             aggregators.user(),
             llm,
+            AssistantTranscript(),  # assistant text before TTS
             tts,
             transport.output(),
             aggregators.assistant(),
@@ -107,18 +112,29 @@ async def bot(runner_args: RunnerArguments):
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
         logger.info("Client connected")
+        bus.publish("call_status", status="connected")
         context.add_message({"role": "user", "content": "The caller just connected. Greet them briefly and ask how you can help."})
         await task.queue_frames([LLMRunFrame()])
 
     @transport.event_handler("on_client_disconnected")
     async def on_client_disconnected(transport, client):
         logger.info("Client disconnected")
+        bus.publish("call_status", status="ended")
         await task.cancel()
 
-    await PipelineRunner(handle_sigint=runner_args.handle_sigint).run(task)
+    try:
+        await PipelineRunner(handle_sigint=runner_args.handle_sigint).run(task)
+    finally:
+        bus.publish("call_status", status="ended")  # also covers crashes; no-op if already ended
 
 
 if __name__ == "__main__":
-    from pipecat.runner.run import main
+    from pipecat.runner.run import app, main
 
+    # The runner applies this list to its CORS middleware. Vite dev server + the runner's own /client page.
+    os.environ.setdefault(
+        "PIPECAT_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:7860,http://127.0.0.1:7860",
+    )
+    app.include_router(api_router)
     main()
