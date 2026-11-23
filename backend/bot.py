@@ -35,7 +35,7 @@ from pipecat.turns.user_turn_strategies import UserTurnStrategies
 import db
 from api import router as api_router
 from events import bus
-from seed import seed_if_empty
+from seed import ensure_seeded
 from tools import Session, make_tools
 from transcript import AssistantTranscript, UserTranscript
 
@@ -49,7 +49,9 @@ Your replies are spoken aloud: one or two short sentences, plain words, no lists
 no emojis. Say times like "ten thirty AM" and dates like "Wednesday the 25th".
 
 Phone number flow. Follow it exactly, it is the only way callers are identified:
-1. Before booking or cancelling, ask for the caller's 10-digit phone number.
+1. Before booking or cancelling, ask for the caller's 10-digit phone number, all ten digits in one go.
+   If you get fewer than ten digits, the rest may follow in the caller's next message: join them up.
+   Only ask again if the caller has clearly finished and digits are still missing.
 2. Read it back digit by digit, written as separated digits, e.g. "That's 9 8 7 6 5, 4 3 2 1 0. Is that right?"
    That message must contain only this number, no other digits.
 3. Wait for the caller to clearly say yes. If they say no or correct a digit, ask again and repeat step 2.
@@ -66,7 +68,7 @@ booked or cancelled unless the tool said so."""
 
 async def bot(runner_args: RunnerArguments):
     conn = db.connect()
-    seed_if_empty(conn)
+    ensure_seeded(conn)  # also per call: a server left running past midnight still gets a full week
     doctors = "; ".join(f"{d['name']}, {d['specialty']}" for d in db.all_doctors(conn))
     conn.close()
     prompt = SYSTEM_PROMPT.format(today=date.today().strftime("%A, %Y-%m-%d"), doctors=doctors)
@@ -109,10 +111,11 @@ async def bot(runner_args: RunnerArguments):
     aggregators = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(
-            # Each VAD stop makes ElevenLabs finalise the audio so far. Pipecat's 0.2s default cut speech
-            # at every small pause into context-free fragments that Scribe misheard; 0.6s keeps phrases whole.
+            # Each VAD stop makes ElevenLabs finalise the audio so far and lets the turn end. Pipecat's 0.2s
+            # default (and 0.6s) split phone numbers at the pauses between digit groups: "9700." / "306." /
+            # "3715" arrived as three turns. 1.0s keeps a number in one piece; costs ~0.4s per reply.
             vad_analyzer=SileroVADAnalyzer(
-                params=VADParams(stop_secs=float(os.getenv("VAD_STOP_SECS") or 0.6))
+                params=VADParams(stop_secs=float(os.getenv("VAD_STOP_SECS") or 1.0))
             ),
             # Smart Turn decides when the caller has finished. If it thinks they haven't, it waits
             # this long in silence before answering anyway (default 3s felt dead on the line).
@@ -174,6 +177,11 @@ if __name__ == "__main__":
         "http://localhost:5173,http://127.0.0.1:5173,http://localhost:7860,http://127.0.0.1:7860",
     )
     app.include_router(api_router)
+
+    # Startup check: fail loudly here rather than mid-call if the DB is missing or empty.
+    startup_conn = db.connect()
+    ensure_seeded(startup_conn)
+    startup_conn.close()
 
     if sys.platform == "win32":
         # shortcut: on Windows uvicorn uses the Proactor loop, whose UDP sockets stop reading for good

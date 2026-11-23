@@ -1,6 +1,8 @@
-"""Reset the database with mock doctors and 7 days of slots. Run: python seed.py"""
+"""Mock doctors and slots. `python seed.py` resets everything; the bot calls ensure_seeded() at startup."""
 
 from datetime import date, timedelta
+
+from loguru import logger
 
 import db
 
@@ -15,28 +17,43 @@ DOCTORS = [
     ("Dr. Sneha Kapoor", "Pediatrician", MORNING + EVENING),
     ("Dr. Arjun Nair", "ENT Specialist", EVENING),
 ]
+DAYS = 7
+
+
+def add_upcoming_slots(conn) -> None:
+    """Make sure every doctor has slots for the next DAYS days. Existing slots (and bookings) are kept."""
+    shifts = {name: times for name, _, times in DOCTORS}
+    with conn:
+        for d in db.all_doctors(conn):
+            for offset in range(DAYS):
+                day = (date.today() + timedelta(days=offset)).isoformat()
+                conn.executemany(
+                    "INSERT OR IGNORE INTO slots (doctor_id, date, time) VALUES (?, ?, ?)",
+                    [(d["id"], day, t) for t in shifts.get(d["name"], MORNING)],
+                )
 
 
 def seed(conn) -> None:
     with conn:
         conn.executescript("DELETE FROM appointments; DELETE FROM slots; DELETE FROM doctors;")
-        for name, specialty, times in DOCTORS:
-            doctor_id = conn.execute(
-                "INSERT INTO doctors (name, specialty) VALUES (?, ?)", (name, specialty)
-            ).lastrowid
-            for offset in range(7):
-                day = (date.today() + timedelta(days=offset)).isoformat()
-                conn.executemany(
-                    "INSERT INTO slots (doctor_id, date, time) VALUES (?, ?, ?)",
-                    [(doctor_id, day, t) for t in times],
-                )
+        conn.executemany("INSERT INTO doctors (name, specialty) VALUES (?, ?)",
+                         [(name, specialty) for name, specialty, _ in DOCTORS])
+    add_upcoming_slots(conn)
 
 
-def seed_if_empty(conn) -> None:
+def ensure_seeded(conn) -> None:
+    """Startup check: create + seed an empty DB, and top up slots so a DB seeded days ago still has a week."""
     if not db.all_doctors(conn):
         seed(conn)
+    else:
+        add_upcoming_slots(conn)
+    doctors = len(db.all_doctors(conn))
+    free = sum(len(db.free_slots(conn, d["id"])) for d in db.all_doctors(conn))
+    if doctors == 0 or free == 0:
+        raise RuntimeError(f"Database {db.DB_PATH} has {doctors} doctors and {free} free slots")
+    logger.info(f"DB ready: {db.DB_PATH} ({doctors} doctors, {free} free upcoming slots)")
 
 
 if __name__ == "__main__":
     seed(db.connect())
-    print(f"Seeded {len(DOCTORS)} doctors with 7 days of slots into {db.DB_PATH}")
+    print(f"Seeded {len(DOCTORS)} doctors with {DAYS} days of slots into {db.DB_PATH}")

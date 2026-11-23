@@ -1,6 +1,7 @@
 """Tool handlers against a temp SQLite DB, with a fake Pipecat params object."""
 
 import asyncio
+import sqlite3
 from datetime import date, timedelta
 from types import SimpleNamespace
 
@@ -166,3 +167,73 @@ def test_book_and_cancel_publish_events_after_the_write(tools):
         assert q.get_nowait()["type"] == "slots_changed"
         call(tools.book, doctor="Iyer", date=TOMORROW, time="3 AM")  # failed booking: no events
         assert q.empty()
+
+
+# --- regressions from the live call ---
+
+def test_confirm_works_with_real_gemini_context():
+    """Live bug: Gemini puts LLMSpecificMessage objects (not dicts) in the context -> AttributeError."""
+    from pipecat.processors.aggregators.llm_context import LLMContext, LLMSpecificMessage
+    session = Session()
+    confirm = make_tools(session)[0]
+    ctx = LLMContext(messages=[
+        {"role": "assistant", "content": "That's 9 7 0 3 0 6 5 7 1 5. Is that right?"},
+        LLMSpecificMessage(llm="google", message={"role": "model", "parts": [{"thought_signature": b"x"}]}),
+        {"role": "user", "content": "Yes."},
+        LLMSpecificMessage(llm="google", message={"role": "model", "parts": [{"thought_signature": b"y"}]}),
+    ])
+    out = {}
+
+    async def cb(result, **_):
+        out["r"] = result
+
+    asyncio.run(confirm(SimpleNamespace(context=ctx, result_callback=cb), phone_number="9703065715"))
+    assert out["r"] == {"confirmed_phone": "9703065715"} and session.phone == "9703065715"
+
+
+def test_tool_crash_returns_short_error_and_logs(tools, monkeypatch):
+    confirmed(tools)
+
+    def boom(*a, **k):
+        raise sqlite3.OperationalError("database is locked")
+
+    monkeypatch.setattr(db, "book", boom)
+    r = call(tools.book, doctor="Iyer", date=TOMORROW, time="2:00 PM")
+    assert r == {"error": "Internal error, nothing was saved. Apologise and try once more."}
+
+
+def test_tool_schema_survives_logging_wrapper():
+    from pipecat.processors.aggregators.llm_context import LLMContext
+    schemas = {f.name: f for f in LLMContext(tools=make_tools(Session())).tools.standard_tools}
+    assert set(schemas) == {"confirm_phone_number", "check_doctor_availability", "book_appointment",
+                            "cancel_appointment"}
+    assert schemas["book_appointment"].required == ["doctor", "date", "time"]
+    assert "confirmed phone number" in schemas["book_appointment"].description
+
+
+def test_startup_check_seeds_empty_db_and_tops_up_old_slots(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DB_PATH", str(tmp_path / "fresh.db"))
+    conn = db.connect()
+    seed.ensure_seeded(conn)  # empty -> seeded
+    assert len(db.all_doctors(conn)) == 6
+    conn.execute("DELETE FROM slots WHERE date > ?", (date.today().isoformat(),))  # simulate a stale DB
+    conn.commit()
+    seed.ensure_seeded(conn)
+    assert db.free_slots(conn, 1, TOMORROW)
+
+
+def test_db_path_is_absolute():
+    import importlib, os
+    assert os.path.isabs(importlib.reload(db).DB_PATH)
+
+
+def test_logging_wrapper_does_not_mutate_shared_params(tools):
+    results = []
+
+    async def cb(result, **_):
+        results.append(result)
+
+    p = SimpleNamespace(context=SimpleNamespace(get_messages=lambda: READBACK), result_callback=cb)
+    asyncio.run(tools.confirm(p, phone_number=PHONE))
+    asyncio.run(tools.check(p, doctor="Iyer", date=TOMORROW))
+    assert p.result_callback is cb and len(results) == 2

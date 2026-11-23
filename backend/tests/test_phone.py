@@ -36,3 +36,27 @@ def test_normalise_invalid(spoken):
 
 def test_spoken_to_digits_ignores_filler_and_keeps_order():
     assert spoken_to_digits("that's 9 8 7, is that right?") == "987"
+
+
+# Cases requested after the first live call
+@pytest.mark.parametrize("spoken, expected", [
+    ("double nine eight seven six five four three two one", "9987654321"),
+    ("nine eight double nine seven six five four three two", "9899765432"),
+    ("nine oh oh one two three four five six seven", "9001234567"),
+    ("nine eight oh, seven six five, four three two one", "9807654321"),
+    ("triple nine eight seven six five four three two", "9998765432"),
+    ("nine eight seven six triple zero one two three", "9876000123"),
+    ("9 8 7 6 5 4 3 2 1 0", "9876543210"),
+    ("+91 9876543210", "9876543210"),
+    ("+919876543210", "9876543210"),
+    ("plus 91 98765 43210", "9876543210"),
+    ("9703065715.", "9703065715"),            # how Scribe actually returned it
+    ("970. 306. 5715", "9703065715"),        # digit groups as separate STT segments
+])
+def test_normalise_requested_cases(spoken, expected):
+    assert normalise(spoken) == expected
+
+
+def test_spoken_fragment_9876():
+    assert spoken_to_digits("9 8 7 6") == "9876"
+    assert normalise("9 8 7 6") is None  # only 4 digits: never accepted as a phone number

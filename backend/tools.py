@@ -4,10 +4,13 @@ Phone rule enforced in code: book/cancel only use a number stored by confirm_pho
 tool only stores it if the agent's last message read the digits back and the caller then said yes.
 """
 
+import copy
+import functools
 import re
 from dataclasses import dataclass
 from datetime import date as Date, datetime
 
+from loguru import logger
 from pipecat.processors.aggregators.llm_context import standard_message_text
 from pipecat.services.llm_service import FunctionCallParams
 
@@ -27,6 +30,32 @@ class Session:
     phone: str | None = None
 
 
+def logged(tool):
+    """Log name, args and result of every call. Any crash: full traceback in the log, short error to the LLM.
+    functools.wraps keeps the signature + docstring Pipecat reads to build the tool schema."""
+    @functools.wraps(tool)
+    async def wrapper(params, **kwargs):
+        logger.info(f"TOOL CALL {tool.__name__}({kwargs})")
+        send, sent = params.result_callback, False
+
+        async def result_callback(result, **kw):
+            nonlocal sent
+            sent = True
+            logger.info(f"TOOL RESULT {tool.__name__}: {result}")
+            await send(result, **kw)
+
+        params = copy.copy(params)  # don't mutate the caller's object, or wrappers stack on reuse
+        params.result_callback = result_callback
+        try:
+            await tool(params, **kwargs)
+        except Exception:
+            logger.exception(f"TOOL CRASHED {tool.__name__}({kwargs})")
+            if not sent:
+                await result_callback({"error": "Internal error, nothing was saved. Apologise and try once more."})
+
+    return wrapper
+
+
 def is_yes(text: str) -> bool:
     words = set(re.findall(r"[a-z]+", text.lower()))
     return bool(words & YES) and not words & NO
@@ -37,9 +66,10 @@ def last_readback_and_reply(messages: list) -> tuple[str, str]:
     Agent text after the caller's message is ignored: it's the reply that triggered this tool call."""
     user_text = None
     for m in reversed(messages):
-        role, text = m.get("role"), standard_message_text(m).strip()
+        text = standard_message_text(m).strip()
         if not text:
-            continue  # tool calls / tool results have no spoken text
+            continue  # tool calls, tool results and Gemini's own LLMSpecificMessage objects (not dicts)
+        role = m.get("role")
         if user_text is None:
             if role == "user":
                 user_text = text
@@ -225,4 +255,5 @@ def make_tools(session: Session) -> list:
         finally:
             conn.close()
 
-    return [confirm_phone_number, check_doctor_availability, book_appointment, cancel_appointment]
+    return [logged(t) for t in (confirm_phone_number, check_doctor_availability, book_appointment,
+                                cancel_appointment)]

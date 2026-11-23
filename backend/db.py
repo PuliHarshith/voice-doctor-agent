@@ -5,7 +5,9 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-DB_PATH = os.getenv("DB_PATH", str(Path(__file__).parent / "clinic.db"))
+# Always absolute, so the bot and seed.py hit the same file whatever the working directory.
+# A relative DB_PATH is taken relative to backend/.
+DB_PATH = str((Path(__file__).parent / os.getenv("DB_PATH", "clinic.db")).resolve())
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS doctors (
