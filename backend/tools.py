@@ -16,7 +16,7 @@ from pipecat.services.llm_service import FunctionCallParams
 
 import db
 from events import bus
-from phone import normalise, spoken_to_digits
+from phone import normalise
 
 YES = {"yes", "yeah", "yep", "yup", "ya", "yah", "correct", "right", "exactly", "sure", "haan", "han",
        "ha", "ok", "okay", "absolutely", "confirmed", "perfect", "affirmative"}
@@ -133,11 +133,14 @@ def make_tools(session: Session) -> list:
         Args:
             phone_number: The 10-digit number exactly as you read it back, e.g. "9876543210".
         """
+        # Any new attempt drops the old number: if the caller is switching numbers and this one is
+        # rejected, booking must not silently fall back to the previous one.
+        session.phone = None
         phone = normalise(phone_number)
         bot_text, user_text = last_readback_and_reply(params.context.get_messages())
         if phone is None:
             result = {"error": f"'{phone_number}' is not a valid 10-digit phone number. Ask the caller again."}
-        elif phone not in spoken_to_digits(bot_text):
+        elif normalise(bot_text) != phone:  # exactly this number was read back: no extra or missing digits
             result = {"error": "You have not read this exact number back yet. Read it digit by digit "
                                "and ask the caller to confirm."}
         elif not is_yes(user_text):
@@ -203,6 +206,8 @@ def make_tools(session: Session) -> list:
             hhmm = parse_time(time)
             if not err and hhmm is None:
                 err = f"'{time}' is not a valid time."
+            if not err and (iso, hhmm) <= db.now_local():
+                err = f"{speak_time(hhmm)} today has already passed. Offer a later time."
             if err:
                 return await params.result_callback({"error": err})
             appt_id = db.book(conn, session.phone, d["id"], iso, hhmm)

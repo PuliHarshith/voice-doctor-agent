@@ -43,7 +43,7 @@ def connect(path: str | None = None) -> sqlite3.Connection:
     return conn
 
 
-def _now() -> tuple[str, str]:
+def now_local() -> tuple[str, str]:
     now = datetime.now()
     return now.strftime("%Y-%m-%d"), now.strftime("%H:%M")
 
@@ -62,7 +62,7 @@ def find_doctors(conn, query: str) -> list[sqlite3.Row]:
 
 def doctors_with_slots(conn) -> list[dict]:
     """Every doctor with all upcoming slots, booked or free (for the dashboard)."""
-    today, now = _now()
+    today, now = now_local()
     doctors = {d["id"]: {**dict(d), "slots": []} for d in all_doctors(conn)}
     for s in conn.execute(
         """SELECT doctor_id, date, time, is_booked FROM slots
@@ -92,7 +92,7 @@ def get_appointment(conn, appointment_id: int) -> dict | None:
 
 def free_slots(conn, doctor_id: int, date: str | None = None) -> list[sqlite3.Row]:
     """Unbooked future slots, optionally for one date."""
-    today, now = _now()
+    today, now = now_local()
     sql = """SELECT date, time FROM slots
              WHERE doctor_id = ? AND is_booked = 0 AND (date > ? OR (date = ? AND time > ?))"""
     args = [doctor_id, today, today, now]
@@ -120,7 +120,7 @@ def book(conn, phone: str, doctor_id: int, date: str, time: str) -> int | None:
 
 
 def upcoming_appointments(conn, phone: str) -> list[sqlite3.Row]:
-    today, now = _now()
+    today, now = now_local()
     return conn.execute(
         """SELECT a.id, a.date, a.time, d.name AS doctor, d.specialty
            FROM appointments a JOIN doctors d ON d.id = a.doctor_id

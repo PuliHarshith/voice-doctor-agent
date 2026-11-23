@@ -60,3 +60,19 @@ def test_normalise_requested_cases(spoken, expected):
 def test_spoken_fragment_9876():
     assert spoken_to_digits("9 8 7 6") == "9876"
     assert normalise("9 8 7 6") is None  # only 4 digits: never accepted as a phone number
+
+
+@pytest.mark.parametrize("spoken, expected", [
+    ("nine eight seven six five four three two one zero", "9876543210"),   # zero
+    ("nine eight seven six five four three two one oh", "9876543210"),     # oh
+    ("98765-43210", "9876543210"),                                         # dash
+    ("987-654-3210", "9876543210"),
+    ("98 76 54 32 10", "9876543210"),                                      # spaces
+    ("+91-98765-43210", "9876543210"),
+    ("091 98765 43210", None),                                             # 13 digits
+    ("98765 4321", None),                                                  # 9 digits: too few
+    ("98765 432100", None),                                                # 11 digits, no 0 prefix: too many
+    ("nine eight seven six five four three two one", None),               # 9 spoken digits
+])
+def test_normalise_audit_cases(spoken, expected):
+    assert normalise(spoken) == expected

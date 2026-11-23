@@ -237,3 +237,36 @@ def test_logging_wrapper_does_not_mutate_shared_params(tools):
     asyncio.run(tools.confirm(p, phone_number=PHONE))
     asyncio.run(tools.check(p, doctor="Iyer", date=TOMORROW))
     assert p.result_callback is cb and len(results) == 2
+
+
+# --- audit regressions ---
+
+def test_cannot_book_a_slot_earlier_today(tools, monkeypatch):
+    confirmed(tools)
+    today = date.today().isoformat()
+    monkeypatch.setattr(db, "now_local", lambda: (today, "23:00"))
+    r = call(tools.book, doctor="Sharma", date=today, time="9:00 AM")
+    assert "already passed" in r["error"]
+
+
+def test_readback_with_extra_digit_is_rejected(tools):
+    msgs = [{"role": "assistant", "content": "That's 9 8 7 6 5 4 3 2 1 0 5. Right?"}, {"role": "user", "content": "yes"}]
+    assert "error" in call(tools.confirm, msgs, phone_number=PHONE)
+    assert tools.session.phone is None
+
+
+def test_rejected_new_number_drops_the_old_one(tools):
+    confirmed(tools)
+    msgs = [{"role": "assistant", "content": "That's 9 1 1 1 1 1 1 1 1 1. Right?"}, {"role": "user", "content": "no"}]
+    call(tools.confirm, msgs, phone_number="9111111111")
+    assert tools.session.phone is None
+    assert "not confirmed" in call(tools.book, doctor="Iyer", date=TOMORROW, time="2 PM")["error"]
+
+
+def test_new_call_starts_unconfirmed():
+    """Each call builds a fresh Session (bot.py), so nothing carries over from the previous caller."""
+    first = Session()
+    make_tools(first)
+    first.phone = PHONE
+    _, _, book, _ = make_tools(Session())
+    assert "not confirmed" in call(book, doctor="Iyer", date=TOMORROW, time="2 PM")["error"]

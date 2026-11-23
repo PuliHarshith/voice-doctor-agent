@@ -9,6 +9,9 @@ import time
 from datetime import date
 
 from dotenv import load_dotenv
+
+load_dotenv(override=True)  # before the local imports below: db.py reads DB_PATH at import time
+
 from loguru import logger
 
 from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
@@ -39,8 +42,6 @@ from events import bus
 from seed import ensure_seeded
 from tools import Session, make_tools
 from transcript import AssistantTranscript, UserTranscript
-
-load_dotenv(override=True)
 
 SYSTEM_PROMPT = """You are Ava, the phone receptionist at Sunrise Clinic.
 You help callers check doctor availability, book appointments and cancel appointments.
@@ -155,6 +156,12 @@ async def bot(runner_args: RunnerArguments):
 
     last_recovery = 0.0
 
+    async def say(text: str, *then):
+        # TTSSpeakFrame skips the LLM, so AssistantTranscript never sees it: log + publish it here.
+        logger.info(f"BOT said: {text}")
+        bus.publish("transcript", role="assistant", text=text, final=True)
+        await task.queue_frames([TTSSpeakFrame(text), *then])
+
     @llm.event_handler("on_completion_timeout")
     async def on_completion_timeout(service):
         # Free-tier Gemini sometimes stalls. Never leave the caller in silence: apologise and ask the
@@ -163,11 +170,11 @@ async def bot(runner_args: RunnerArguments):
         nonlocal last_recovery
         if time.monotonic() - last_recovery < 30:
             logger.error("LLM timed out again; giving up on this turn")
-            await task.queue_frames([TTSSpeakFrame("Sorry, I'm having trouble right now. Could you say that again?")])
+            await say("Sorry, I'm having trouble right now. Could you say that again?")
             return
         last_recovery = time.monotonic()
         logger.warning("LLM timed out; apologising and retrying")
-        await task.queue_frames([TTSSpeakFrame("Sorry, one moment."), LLMRunFrame()])
+        await say("Sorry, one moment.", LLMRunFrame())
 
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
