@@ -4,11 +4,14 @@ Run: python bot.py  then open http://localhost:7860/client
 """
 
 import os
+import sys
 from datetime import date
 
 from dotenv import load_dotenv
 from loguru import logger
 
+from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
+from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.frames.frames import LLMRunFrame
 from pipecat.pipeline.pipeline import Pipeline
@@ -25,6 +28,8 @@ from pipecat.services.elevenlabs.stt import ElevenLabsRealtimeSTTService
 from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 from pipecat.services.google.llm import GoogleLLMService
 from pipecat.transports.base_transport import TransportParams
+from pipecat.turns.user_stop.turn_analyzer_user_turn_stop_strategy import TurnAnalyzerUserTurnStopStrategy
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
 
 import db
 from api import router as api_router
@@ -74,20 +79,37 @@ async def bot(runner_args: RunnerArguments):
     tts = ElevenLabsTTSService(
         api_key=os.environ["ELEVENLABS_API_KEY"],
         settings=ElevenLabsTTSService.Settings(
-            # Rachel, a stock ElevenLabs voice available on free accounts
-            voice=os.getenv("ELEVENLABS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM"),
+            # Sarah, a *premade* voice: free-tier API keys get 402 on library voices (no audio at all)
+            voice=os.getenv("ELEVENLABS_VOICE_ID") or "EXAVITQu4vr4xnSDxMaL",
         ),
     )
     llm = GoogleLLMService(
         api_key=os.environ["GOOGLE_API_KEY"],
-        settings=GoogleLLMService.Settings(system_instruction=prompt),
+        # Free-tier quota is per model per day (gemini-3.6-flash: only 20 requests), so the model is
+        # swappable from .env when one runs out. flash-lite measured ~1s to first token.
+        settings=GoogleLLMService.Settings(
+            model=os.getenv("GEMINI_MODEL") or "gemini-3.5-flash-lite", system_instruction=prompt
+        ),
+        # Free-tier first-token latency occasionally spikes to ~10s; re-issue instead of waiting.
+        retry_on_timeout=True,
+        retry_timeout_secs=4.0,
     )
 
     # Direct-function tools: Pipecat reads their schemas and registers them with the LLM.
     context = LLMContext(tools=make_tools(Session()))
     aggregators = LLMContextAggregatorPair(
         context,
-        user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
+        user_params=LLMUserAggregatorParams(
+            vad_analyzer=SileroVADAnalyzer(),
+            # Smart Turn decides when the caller has finished. If it thinks they haven't, it waits
+            # this long in silence before answering anyway (default 3s felt dead on the line).
+            # Not lower: callers pause between digit groups when giving a phone number.
+            user_turn_strategies=UserTurnStrategies(
+                stop=[TurnAnalyzerUserTurnStopStrategy(
+                    turn_analyzer=LocalSmartTurnAnalyzerV3(params=SmartTurnParams(stop_secs=2.0))
+                )]
+            ),
+        ),
     )
 
     pipeline = Pipeline(
@@ -137,4 +159,17 @@ if __name__ == "__main__":
         "http://localhost:5173,http://127.0.0.1:5173,http://localhost:7860,http://127.0.0.1:7860",
     )
     app.include_router(api_router)
+
+    if sys.platform == "win32":
+        # shortcut: on Windows uvicorn uses the Proactor loop, whose UDP sockets stop reading for good
+        # after one ICMP "port unreachable" (CPython _ProactorDatagramTransport._loop_reading). ICE probes
+        # the browser's closed candidate ports, so WebRTC never connects. The selector loop keeps reading.
+        # Pipecat's runner calls uvicorn.run(app, host, port) without a loop option, so set it here.
+        # Remove once CPython fixes the Proactor datagram read loop.
+        import functools
+
+        import uvicorn
+
+        uvicorn.run = functools.partial(uvicorn.run, loop="asyncio:SelectorEventLoop")
+
     main()
