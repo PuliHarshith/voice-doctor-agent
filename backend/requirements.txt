@@ -1,0 +1,2 @@
+pipecat-ai[webrtc,elevenlabs,google,silero,runner]==1.17.0
+python-dotenv
