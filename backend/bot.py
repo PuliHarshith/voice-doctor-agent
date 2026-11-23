@@ -4,6 +4,7 @@ Run: python bot.py  then open http://localhost:7860/client
 """
 
 import os
+from datetime import date
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -25,15 +26,42 @@ from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 from pipecat.services.google.llm import GoogleLLMService
 from pipecat.transports.base_transport import TransportParams
 
+import db
+from seed import seed_if_empty
+from tools import Session, make_tools
+
 load_dotenv(override=True)
 
-SYSTEM_PROMPT = """You are Ava, the phone receptionist at a small medical clinic.
+SYSTEM_PROMPT = """You are Ava, the phone receptionist at Sunrise Clinic.
 You help callers check doctor availability, book appointments and cancel appointments.
-Your replies are spoken aloud: keep them to one or two short sentences, plain words,
-no lists, no markdown, no emojis. Be warm and efficient. If you don't know something, say so."""
+Today is {today}. Our doctors: {doctors}.
+
+Your replies are spoken aloud: one or two short sentences, plain words, no lists, no markdown,
+no emojis. Say times like "ten thirty AM" and dates like "Wednesday the 25th".
+
+Phone number flow. Follow it exactly, it is the only way callers are identified:
+1. Before booking or cancelling, ask for the caller's 10-digit phone number.
+2. Read it back digit by digit, written as separated digits, e.g. "That's 9 8 7 6 5, 4 3 2 1 0. Is that right?"
+   That message must contain only this number, no other digits.
+3. Wait for the caller to clearly say yes. If they say no or correct a digit, ask again and repeat step 2.
+4. Only after the yes, call confirm_phone_number. If it returns an error, follow what it says.
+Never book or cancel without a confirmed number, and never invent or guess digits.
+
+Booking: use check_doctor_availability, offer two or three times, and once the caller picks one,
+call book_appointment with the date as YYYY-MM-DD. Then repeat the doctor, day and time.
+Cancelling: call cancel_appointment; if several come back, ask which one.
+Checking availability does not need a phone number.
+If a tool returns an error, explain it simply and offer the next step. Never claim something was
+booked or cancelled unless the tool said so."""
 
 
 async def bot(runner_args: RunnerArguments):
+    conn = db.connect()
+    seed_if_empty(conn)
+    doctors = "; ".join(f"{d['name']}, {d['specialty']}" for d in db.all_doctors(conn))
+    conn.close()
+    prompt = SYSTEM_PROMPT.format(today=date.today().strftime("%A, %Y-%m-%d"), doctors=doctors)
+
     transport = await create_transport(
         runner_args,
         {"webrtc": lambda: TransportParams(audio_in_enabled=True, audio_out_enabled=True)},
@@ -49,10 +77,11 @@ async def bot(runner_args: RunnerArguments):
     )
     llm = GoogleLLMService(
         api_key=os.environ["GOOGLE_API_KEY"],
-        settings=GoogleLLMService.Settings(system_instruction=SYSTEM_PROMPT),
+        settings=GoogleLLMService.Settings(system_instruction=prompt),
     )
 
-    context = LLMContext()
+    # Direct-function tools: Pipecat reads their schemas and registers them with the LLM.
+    context = LLMContext(tools=make_tools(Session()))
     aggregators = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
@@ -78,7 +107,7 @@ async def bot(runner_args: RunnerArguments):
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
         logger.info("Client connected")
-        context.add_message({"role": "user", "content": "The caller just connected. Greet them."})
+        context.add_message({"role": "user", "content": "The caller just connected. Greet them briefly and ask how you can help."})
         await task.queue_frames([LLMRunFrame()])
 
     @transport.event_handler("on_client_disconnected")
