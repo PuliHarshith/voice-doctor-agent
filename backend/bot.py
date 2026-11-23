@@ -13,6 +13,7 @@ from loguru import logger
 from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
 from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
 from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.audio.vad.vad_analyzer import VADParams
 from pipecat.frames.frames import LLMRunFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -75,7 +76,15 @@ async def bot(runner_args: RunnerArguments):
         {"webrtc": lambda: TransportParams(audio_in_enabled=True, audio_out_enabled=True)},
     )
 
-    stt = ElevenLabsRealtimeSTTService(api_key=os.environ["ELEVENLABS_API_KEY"])
+    stt = ElevenLabsRealtimeSTTService(
+        api_key=os.environ["ELEVENLABS_API_KEY"],
+        settings=ElevenLabsRealtimeSTTService.Settings(
+            # Explicit English: auto-detect can flip to Hindi etc. on an Indian accent. Scribe has no
+            # en-IN variant; "en" and "en-IN" both map to "eng".
+            language=os.getenv("STT_LANGUAGE") or "en",
+            model=os.getenv("STT_MODEL") or "scribe_v2_realtime",  # the streaming model
+        ),
+    )
     tts = ElevenLabsTTSService(
         api_key=os.environ["ELEVENLABS_API_KEY"],
         settings=ElevenLabsTTSService.Settings(
@@ -100,13 +109,19 @@ async def bot(runner_args: RunnerArguments):
     aggregators = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(
-            vad_analyzer=SileroVADAnalyzer(),
+            # Each VAD stop makes ElevenLabs finalise the audio so far. Pipecat's 0.2s default cut speech
+            # at every small pause into context-free fragments that Scribe misheard; 0.6s keeps phrases whole.
+            vad_analyzer=SileroVADAnalyzer(
+                params=VADParams(stop_secs=float(os.getenv("VAD_STOP_SECS") or 0.6))
+            ),
             # Smart Turn decides when the caller has finished. If it thinks they haven't, it waits
             # this long in silence before answering anyway (default 3s felt dead on the line).
             # Not lower: callers pause between digit groups when giving a phone number.
             user_turn_strategies=UserTurnStrategies(
                 stop=[TurnAnalyzerUserTurnStopStrategy(
-                    turn_analyzer=LocalSmartTurnAnalyzerV3(params=SmartTurnParams(stop_secs=2.0))
+                    turn_analyzer=LocalSmartTurnAnalyzerV3(
+                        params=SmartTurnParams(stop_secs=float(os.getenv("TURN_SILENCE_SECS") or 2.0))
+                    )
                 )]
             ),
         ),

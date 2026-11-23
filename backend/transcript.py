@@ -3,6 +3,7 @@
 Each event carries the whole line so far; final=False lines are updates the dashboard replaces.
 """
 
+from loguru import logger
 from pipecat.frames.frames import (
     InterimTranscriptionFrame,
     InterruptionFrame,
@@ -24,6 +25,7 @@ class UserTranscript(FrameProcessor):
         if isinstance(frame, InterimTranscriptionFrame) and frame.text.strip():
             bus.publish("transcript", role="user", text=frame.text.strip(), final=False)
         elif isinstance(frame, TranscriptionFrame) and frame.text.strip():
+            logger.info(f"USER (STT heard): {frame.text.strip()}")
             bus.publish("transcript", role="user", text=frame.text.strip(), final=True)
         await self.push_frame(frame, direction)
 
@@ -46,6 +48,7 @@ class AssistantTranscript(FrameProcessor):
         elif isinstance(frame, (LLMFullResponseEndFrame, InterruptionFrame)):
             # interrupted lines are closed too, with whatever the bot had produced
             if self._text.strip():
+                logger.info(f"BOT said: {self._text.strip()}")
                 bus.publish("transcript", role="assistant", text=self._text.strip(), final=True)
             self._text = ""
         await self.push_frame(frame, direction)
