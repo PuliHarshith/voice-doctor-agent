@@ -20,7 +20,7 @@ export function Transcript({ lines, phone }: { lines: Line[]; phone: string | nu
           <ReadBack key={phone} phone={phone} />
         </div>
       )}
-      {lines.length === 0 ? <Empty>No conversation yet.</Empty> : <ChatLines lines={lines} />}
+      {lines.length === 0 ? <Empty>Press Try Call to start</Empty> : <ChatLines lines={lines} />}
     </section>
   )
 }

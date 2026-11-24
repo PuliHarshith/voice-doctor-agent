@@ -191,6 +191,7 @@ export default function App() {
             <Pending title="Appointments" down={backendDown} />
           )}
         </div>
+        <footer className="foot">Pipecat · ElevenLabs · Gemini</footer>
       </main>
 
       {/* Stays mounted so the bot's audio keeps playing whatever the call sheet does. */}

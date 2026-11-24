@@ -9,6 +9,7 @@
   --ink-2: rgb(27 26 23 / 0.64); /* secondary text, 4.5:1+ on page and surface */
   --ink-3: rgb(27 26 23 / 0.28); /* idle marks only, never text */
   --line: #e3ded4; /* hairlines */
+  --line-soft: #efebe4; /* quiet row dividers */
   --accent: #0f6e6a; /* deep teal */
   --on-accent: #ffffff; /* text on the accent */
   /* the accent is only for Try Call, booked slots, the now needle and Ava's voice; everything else
@@ -61,6 +62,7 @@
   --ink-2: rgb(238 234 226 / 0.66);
   --ink-3: rgb(238 234 226 / 0.24);
   --line: #2d2b27;
+  --line-soft: #242320;
   --accent: #4fb3a9;
   --on-accent: #0c1413;
   --green-ink: #9fd6cb;
@@ -344,6 +346,14 @@ button {
 .empty {
   padding: 0 var(--s3) var(--s3);
   color: var(--ink-2);
+}
+
+.foot {
+  padding: var(--s0) 0 0;
+  border-top: 1px solid var(--line);
+  font-size: var(--t-label);
+  letter-spacing: 0.04em;
+  color: var(--ink-label);
 }
 
 /* ---------- figures ---------- */
@@ -886,6 +896,28 @@ button {
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed; /* columns line up whatever the content */
+}
+
+/* Patient phone | Doctor | Date | Time | Status */
+th:nth-child(1) {
+  width: 20%;
+}
+
+th:nth-child(2) {
+  width: 32%;
+}
+
+th:nth-child(3) {
+  width: 18%;
+}
+
+th:nth-child(4) {
+  width: 14%;
+}
+
+th:nth-child(5) {
+  width: 16%;
 }
 
 th {
@@ -905,8 +937,10 @@ th {
 
 td {
   padding: 14px var(--s2) 14px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-soft);
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 tbody tr:last-child td {
