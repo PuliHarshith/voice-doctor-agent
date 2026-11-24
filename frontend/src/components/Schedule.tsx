@@ -1,5 +1,6 @@
 import { slotKey, type Doctor } from '../api'
-import { dayOfMonth, formatTime, minutes, weekday } from '../format'
+import { dayOfMonth, formatTime, minutes, today, weekday } from '../format'
+import { useNow } from '../useNow'
 
 type Props = {
   doctors: Doctor[]
@@ -21,6 +22,10 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
   const span = endMin - startMin
   const hours = Array.from({ length: span / 60 + 1 }, (_, i) => startMin / 60 + i)
   const pos = (hhmm: string) => ((minutes(hhmm) - startMin) / span) * 100
+
+  // "now" marker: only on today's lanes, only while inside the day's hours; moves every 30 s.
+  const clock = new Date(useNow(30_000)).toTimeString().slice(0, 5)
+  const nowAt = active === today() && minutes(clock) >= startMin && minutes(clock) <= endMin ? `${pos(clock)}%` : null
 
   return (
     <section className="panel schedule" aria-label="Doctors and slots">
@@ -60,6 +65,11 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
                   {h >= 12 ? 'p' : 'a'}
                 </span>
               ))}
+              {nowAt && (
+                <span className="now-label num" style={{ left: nowAt }}>
+                  {clock}
+                </span>
+              )}
             </div>
             <span />
           </div>
@@ -78,6 +88,7 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
                     <span key={h} className="gridline" style={{ left: `${((h * 60 - startMin) / span) * 100}%` }} />
                   ))}
                   {slots.length === 0 && <span className="row__none">No hours left today</span>}
+                  {nowAt && <span className="now" style={{ left: nowAt }} />}
                   {slots.map((s) => {
                     const key = slotKey(doc.id, s.date, s.time)
                     return (
