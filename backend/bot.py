@@ -52,7 +52,7 @@ VAD_START_SECS = float(os.getenv("VAD_START_SECS") or 0.15)
 VAD_MIN_VOLUME = float(os.getenv("VAD_MIN_VOLUME") or 0.4)
 # Silence before a phrase is final. Long while a phone number is expected (callers pause between digit
 # groups and a short pause would end the turn mid-number), short otherwise (~0.5s faster replies).
-VAD_STOP_SECS = float(os.getenv("VAD_STOP_SECS") or 0.8)
+VAD_STOP_SECS = float(os.getenv("VAD_STOP_SECS") or 1.0)
 VAD_FAST_STOP_SECS = float(os.getenv("VAD_FAST_STOP_SECS") or 0.5)
 # Words needed to cut the bot off mid-sentence, so a cough or "mm" doesn't. When the bot is quiet, 1 word.
 INTERRUPT_MIN_WORDS = int(os.getenv("INTERRUPT_MIN_WORDS") or 2)

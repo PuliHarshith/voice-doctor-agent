@@ -30,3 +30,4 @@ Real bugs from building and testing this, one line each: **what happened → cau
 - **The ended screen showed 00:00** → the connect time was cleared on hang-up → the end time is kept, so the ended screen shows the call length.
 - **The voice meters stayed flat** → the WebRTC transport never sends audio-level events → measure the tracks with a Web Audio AnalyserNode.
 - **The row flash happened behind the phone** → the phone covered the middle of the screen → on wide screens it covers only the call column.
+- **A booking went through under a number with an invented digit** → the STT heard 9 digits in two pieces and Gemini read back 10; the caller said yes → the number is now accepted only if the caller's own turns contain those exact digits, and the pause for numbers is 1.0 s.

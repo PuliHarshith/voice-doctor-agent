@@ -16,7 +16,7 @@ from pipecat.services.llm_service import FunctionCallParams
 
 import db
 from events import bus
-from phone import normalise
+from phone import normalise, spoken_to_digits
 
 YES = {"yes", "yeah", "yep", "yup", "ya", "yah", "correct", "right", "exactly", "sure", "haan", "han",
        "ha", "ok", "okay", "absolutely", "confirmed", "perfect", "affirmative"}
@@ -61,6 +61,12 @@ def read_back(bot_text: str, phone: str) -> bool:
     Per sentence, so a time said in the same message ("...at five PM. Your number is...") doesn't
     count against it, while a read-back with an extra digit is still rejected."""
     return any(normalise(s) == phone for s in re.split(r"[.?!\n]+", bot_text))
+
+
+def caller_digits(messages: list) -> str:
+    """Every digit the STT heard from the caller this call, in order, joined across turns."""
+    return "".join(spoken_to_digits(standard_message_text(m)) for m in messages
+                   if isinstance(m, dict) and m.get("role") == "user")
 
 
 def is_yes(text: str) -> bool:
@@ -156,6 +162,11 @@ def make_tools(session: Session) -> list:
                                "and ask the caller to confirm."}
         elif not is_yes(user_text):
             result = {"error": "The caller has not clearly said yes to the read-back. Ask them to confirm."}
+        elif phone not in (heard := caller_digits(params.context.get_messages())):
+            # The LLM joined pieces of a number and added or changed a digit: the read-back can't catch
+            # that if the caller says yes without listening closely, so the digits must be the caller's own.
+            result = {"error": f"The caller never said these exact digits (heard from them: {heard or 'none'}). "
+                               "Don't fill in or guess digits: ask for all ten digits again, then read them back."}
         else:
             session.phone = phone
             result = {"confirmed_phone": phone}

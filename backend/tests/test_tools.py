@@ -14,6 +14,7 @@ from tools import Session, is_yes, make_tools
 TOMORROW = (date.today() + timedelta(days=1)).isoformat()
 PHONE = "9876543210"
 READBACK = [
+    {"role": "user", "content": "My number is 98765 43210."},
     {"role": "assistant", "content": "That's 9 8 7 6 5, 4 3 2 1 0. Is that right?"},
     {"role": "user", "content": "Yes, that's right."},
 ]
@@ -63,7 +64,7 @@ def test_confirm_requires_readback(tools):
 
 
 def test_confirm_requires_yes(tools):
-    msgs = [READBACK[0], {"role": "user", "content": "No, the last digit is one"}]
+    msgs = READBACK[:2] + [{"role": "user", "content": "No, the last digit is one"}]
     assert "not clearly said yes" in call(tools.confirm, msgs, phone_number=PHONE)["error"]
     assert tools.session.phone is None
 
@@ -74,6 +75,22 @@ def test_confirm_rejects_number_different_from_readback(tools):
 
 def test_confirm_ignores_agent_text_after_the_yes(tools):
     msgs = READBACK + [{"role": "assistant", "content": "Great, saving that now."}]
+    assert call(tools.confirm, msgs, phone_number=PHONE) == {"confirmed_phone": PHONE}
+
+
+def test_confirm_rejects_digits_the_caller_never_said(tools):
+    # a real call: the STT heard "638" then "206685" (9 digits) and the LLM read back 10, adding a 5
+    msgs = [{"role": "user", "content": "638."}, {"role": "user", "content": "206685."},
+            {"role": "assistant", "content": "That's 6 3 8 2 0 6, 6 8 5 5. Is that right?"},
+            {"role": "user", "content": "Yes."}]
+    r = call(tools.confirm, msgs, phone_number="6382066855")
+    assert "never said these exact digits" in r["error"] and "638206685" in r["error"]
+    assert tools.session.phone is None
+
+
+def test_confirm_accepts_a_number_given_in_pieces(tools):
+    msgs = [{"role": "user", "content": "It's nine eight seven six five"}, {"role": "user", "content": "43210"},
+            READBACK[1], READBACK[2]]
     assert call(tools.confirm, msgs, phone_number=PHONE) == {"confirmed_phone": PHONE}
 
 
@@ -223,6 +240,7 @@ def test_confirm_works_with_real_gemini_context():
     session = Session()
     confirm = make_tools(session)[0]
     ctx = LLMContext(messages=[
+        {"role": "user", "content": "9703 065 715."},
         {"role": "assistant", "content": "That's 9 7 0 3 0 6 5 7 1 5. Is that right?"},
         LLMSpecificMessage(llm="google", message={"role": "model", "parts": [{"thought_signature": b"x"}]}),
         {"role": "user", "content": "Yes."},
@@ -332,6 +350,7 @@ def test_new_call_starts_unconfirmed():
 
 
 def test_readback_can_share_a_message_with_a_time(tools):
-    msgs = [{"role": "assistant", "content": "Dr. Rao at 5 PM on the 26th. Your number is 9 8 7 6 5, 4 3 2 1 0. Right?"},
+    msgs = [READBACK[0],
+            {"role": "assistant", "content": "Dr. Rao at 5 PM on the 26th. Your number is 9 8 7 6 5, 4 3 2 1 0. Right?"},
             {"role": "user", "content": "yes"}]
     assert call(tools.confirm, msgs, phone_number=PHONE) == {"confirmed_phone": PHONE}
