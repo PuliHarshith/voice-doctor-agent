@@ -1,17 +1,44 @@
-/* Sunrise Clinic front desk. One accent; everything else is ink at different strengths. */
+/* Sunrise Clinic front desk. Warm off-white page, white panels, one accent (vermilion).
+   Every colour, size and space comes from the tokens below. */
 :root {
-  --paper: #faf9f6;
-  --ink: #141413;
-  --ink-2: rgb(20 20 19 / 0.62); /* secondary text */
-  --ink-3: rgb(20 20 19 / 0.38); /* tertiary text, idle marks */
-  --line: #e5e4df;
-  --accent: #b4462b; /* terracotta: booked, live, primary action */
-  --accent-wash: rgb(180 70 43 / 0.12);
+  /* colour */
+  --page: #f6f4ef; /* warm off-white */
+  --surface: #ffffff; /* panels, phone */
+  --ink: #1a1a18; /* near-black text */
+  --ink-2: rgb(26 26 24 / 0.64); /* secondary text (passes 4.5:1 on white and page) */
+  --ink-3: rgb(26 26 24 / 0.3); /* idle marks only, never text */
+  --line: #e6e2d9; /* warm grey hairline */
+  --accent: #b4462b; /* vermilion: primary button, live state, Ava's waveform, row flashes */
+  --accent-wash: rgb(180 70 43 / 0.1);
+  --ok: #2e6a4c; /* Booked pill text */
+  --ok-wash: #e7f1eb; /* Booked pill fill */
+  --muted-wash: #efede8; /* Cancelled pill fill */
 
+  /* type */
   --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
   --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --t-xs: 11px;
+  --t-sm: 12px;
+  --t-md: 14px;
+  --t-h2: 24px;
+  --t-h1: 28px;
+  --t-timer: 48px;
 
-  --pad: 28px;
+  /* space: 8px scale */
+  --s1: 8px;
+  --s2: 16px;
+  --s3: 24px;
+  --s4: 32px;
+  --pad: var(--s3); /* inside a panel */
+
+  /* shape and frame */
+  --r-panel: 16px;
+  --r-phone: 28px;
+  --r-control: 8px;
+  --r-pill: 999px;
+  --bar-h: 64px;
+  --call-w: 380px;
+
   color-scheme: light;
 }
 
@@ -29,15 +56,17 @@ body,
 
 body {
   margin: 0;
-  background: var(--paper);
+  background: var(--page);
   color: var(--ink);
-  font: 400 14px/1.45 var(--sans);
+  font: 400 var(--t-md) / 1.45 var(--sans);
   -webkit-font-smoothing: antialiased;
 }
 
 h1,
 h2,
-p {
+p,
+dl,
+dd {
   margin: 0;
 }
 
@@ -47,7 +76,7 @@ button {
   cursor: pointer;
 }
 
-button:focus-visible {
+:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -57,9 +86,13 @@ button:focus-visible {
   font-feature-settings: 'tnum' 1;
 }
 
+.icon {
+  flex: none;
+}
+
 /* ---------- frame ---------- */
 
-/* Column flex, not grid rows: the banner strip comes and goes, main always takes the rest. */
+/* Column flex: the banner strip comes and goes, main always takes the rest. */
 .app {
   height: 100%;
   display: flex;
@@ -67,357 +100,156 @@ button:focus-visible {
 }
 
 .topbar {
+  height: var(--bar-h);
+  flex: none;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 18px var(--pad) 16px;
+  align-items: center;
+  gap: var(--s2);
+  padding: 0 var(--s3);
   border-bottom: 1px solid var(--line);
 }
 
 .brand {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-}
-
-.brand h1 {
-  font: 400 30px/1 var(--serif);
+  margin-right: auto;
+  font: 400 var(--t-h1) / 1 var(--serif);
   letter-spacing: -0.01em;
 }
 
-.brand__sub {
-  color: var(--ink-2);
-  font-size: 13px;
-}
-
-.link {
+.pill {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: var(--s1);
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font-size: var(--t-sm);
   color: var(--ink-2);
 }
 
-.link__dot,
-.state__dot {
+.pill__dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--ink-3);
 }
 
-.link--live .link__dot {
+.pill--connecting .pill__dot {
   background: var(--accent);
+  animation: blink 1s steps(2, start) infinite;
 }
 
-.link--reconnecting .link__dot {
-  background: transparent;
-  border: 1px solid var(--ink-2);
+.pill--connected {
+  color: var(--ink);
+}
+
+.pill--connected .pill__dot {
+  background: var(--accent);
 }
 
 .banners {
-  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: var(--s1);
+  padding: var(--s2) var(--s3) 0;
 }
 
 .banner {
-  padding: 10px var(--pad);
-  font-size: 13px;
+  padding: 10px var(--s2);
+  border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  font-size: 13px;
 }
 
-.banner + .banner {
-  border-top: 1px solid var(--line);
-}
-
+/* Call panel on the left over both rows; Doctors above Appointments on the right. */
 .layout {
   flex: 1;
-  display: grid;
-  grid-template-columns: minmax(320px, 400px) 1fr;
-  min-height: 0;
-}
-
-.col {
   min-height: 0;
   display: grid;
+  grid-template-columns: var(--call-w) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--s2);
+  padding: var(--s3);
 }
 
-.col--call {
+.panel {
+  min-height: 0;
+  display: grid;
   grid-template-rows: auto 1fr;
-  border-right: 1px solid var(--line);
-}
-
-.col--work {
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto; /* scrolls on its own when the screen is too short for everything */
-}
-
-.col--work > .ledger {
-  flex: 1;
-  min-height: 260px; /* never squeezed to nothing: header + a few rows stay visible */
-}
-
-/* Availability with Up next / By doctor beside it. */
-.work__top {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  border-bottom: 1px solid var(--line);
-}
-
-.work__top .schedule {
-  border-bottom: 0;
-  min-width: 0;
-}
-
-/* ---------- figures strip ---------- */
-
-.figures {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-bottom: 1px solid var(--line);
-}
-
-.figure {
-  display: grid;
-  gap: 8px;
-  padding: 16px var(--pad) 14px;
-}
-
-.figure + .figure {
-  border-left: 1px solid var(--line);
-}
-
-.figure__label {
-  font-size: 12px;
-  color: var(--ink-2);
-}
-
-.figure__value {
-  font: 400 34px/1 var(--serif);
-}
-
-/* ---------- aside: up next, by doctor ---------- */
-
-.aside {
-  border-left: 1px solid var(--line);
-  padding-bottom: 18px;
-}
-
-.next,
-.bars {
-  list-style: none;
-  margin: 0;
-  padding: 0 var(--pad);
-}
-
-.next__item {
-  display: grid;
-  grid-template-columns: 70px 1fr;
-  gap: 10px;
-  padding: 10px 0;
-  border-top: 1px solid var(--line);
-  font-size: 13px;
-}
-
-.next__time {
-  font-weight: 500;
-}
-
-.bars {
-  display: grid;
-  gap: 12px;
-}
-
-.bar {
-  display: grid;
-  grid-template-columns: 108px 1fr 18px;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-}
-
-.bar__name {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* a hairline track; the count is a short accent rule on it */
-.bar__track {
-  position: relative;
-  height: 1px;
-  background: var(--line);
-}
-
-.bar__fill {
-  position: absolute;
-  left: 0;
-  top: -1px;
-  height: 3px;
-  background: var(--accent);
-  transition: width 200ms ease-out;
-}
-
-.bar__n {
-  text-align: right;
-  color: var(--ink-2);
+.panel--call {
+  grid-row: 1 / 3;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .section-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
-  padding: 22px var(--pad) 14px;
+  gap: var(--s2);
+  padding: var(--s3) var(--pad) var(--s2);
 }
 
 .section-head h2 {
-  font: 400 24px/1 var(--serif);
+  font: 400 var(--t-h2) / 1 var(--serif);
 }
 
 .section-meta {
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--t-sm);
 }
 
 .empty {
-  padding: 4px var(--pad) 24px;
+  padding: 0 var(--pad) var(--s3);
   color: var(--ink-2);
 }
 
-/* ---------- call console ---------- */
-
-.console {
-  padding: 22px var(--pad) 24px;
-  border-bottom: 1px solid var(--line);
-}
-
-.console__status {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-.state {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--ink-2);
-}
-
-.state--connecting .state__dot {
-  background: var(--accent);
-  animation: blink 1s steps(2, start) infinite;
-}
-
-.state--connected {
-  color: var(--ink);
-}
-
-.state--connected .state__dot {
-  background: var(--accent);
-}
-
-.console__timer {
-  font: 400 52px/1 var(--serif);
-  letter-spacing: -0.02em;
-}
-
-.state--idle ~ .console__timer,
-.state--ended ~ .console__timer {
-  color: var(--ink-3);
-}
-
-.meter {
-  --level: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
-}
-
-.meter + .meter {
-  padding-left: 16px;
-  border-left: 1px solid var(--line);
-}
-
-.meter__label {
-  font-size: 12px;
-  color: var(--ink-2);
-}
-
-.meter__bars {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  height: 26px;
-}
-
-/* Bar height follows --level (0..1), written by useCall from the WebRTC audio levels. */
-.meter__bars i {
-  --k: 1;
-  width: 3px;
-  height: calc(3px + var(--level) * var(--k) * 23px);
-  background: var(--ink);
-  transition: height 90ms linear;
-}
-
-.meter__bars i:nth-child(1),
-.meter__bars i:nth-child(7) { --k: 0.35; }
-.meter__bars i:nth-child(2),
-.meter__bars i:nth-child(6) { --k: 0.65; }
-.meter__bars i:nth-child(3),
-.meter__bars i:nth-child(5) { --k: 0.9; }
-
-.meter--off .meter__bars i {
-  background: var(--ink-3);
-  height: 3px;
-}
-
-.console__actions {
-  display: flex;
-  gap: 10px;
-}
+/* ---------- buttons ---------- */
 
 .btn {
-  padding: 11px 18px;
-  border: 1px solid var(--ink);
-  border-radius: 999px;
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s1);
+  min-height: 40px;
+  padding: 0 var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   font-weight: 500;
   transition: background-color 120ms, color 120ms, border-color 120ms;
 }
 
-.btn--start {
-  flex: 1;
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--paper);
+.btn:hover:not(:disabled) {
+  border-color: var(--ink);
 }
 
-.btn--start:hover {
+.btn--start {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn--start:hover:not(:disabled) {
   background: var(--ink);
   border-color: var(--ink);
 }
 
 .btn--end {
-  flex: 1;
   background: var(--ink);
-  color: var(--paper);
+  border-color: var(--ink);
+  color: #fff;
 }
 
-.btn--end:hover {
+.btn--end:hover:not(:disabled) {
   background: var(--accent);
   border-color: var(--accent);
-}
-
-.btn--quiet {
-  border-color: var(--line);
-}
-
-.btn--quiet:hover:not(:disabled) {
-  border-color: var(--ink);
 }
 
 .btn--quiet[aria-pressed='true'] {
@@ -430,34 +262,66 @@ button:focus-visible {
   cursor: default;
 }
 
-/* ---------- transcript ---------- */
+/* ---------- call panel ---------- */
+
+.console {
+  display: grid;
+  gap: var(--s2);
+  padding: var(--s3) var(--pad);
+  border-bottom: 1px solid var(--line);
+}
+
+.console__timer {
+  font: 400 var(--t-timer) / 1 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.console--idle .console__timer,
+.console--ended .console__timer {
+  color: var(--ink-2);
+}
+
+.console__caller {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+
+.console__caller dd {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  animation: fade 160ms ease-out;
+}
 
 .transcript {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
 }
 
 .transcript__lines {
   list-style: none;
   margin: 0;
-  padding: 0 var(--pad) 24px;
+  padding: 0 var(--pad) var(--s3);
   overflow-y: auto;
   min-height: 0;
 }
 
 .utt {
   display: grid;
-  grid-template-columns: 52px 1fr;
-  gap: 10px;
-  padding: 10px 0;
+  grid-template-columns: 48px 1fr;
+  gap: var(--s1);
+  padding: 12px 0;
   border-top: 1px solid var(--line);
-  animation: rise 180ms ease-out;
+  animation: fade 180ms ease-out;
 }
 
 .utt__who {
   padding-top: 1px;
-  font-size: 12px;
+  font-size: var(--t-sm);
   color: var(--ink-2);
 }
 
@@ -473,11 +337,11 @@ button:focus-visible {
   color: var(--ink-2);
 }
 
-/* ---------- availability ---------- */
+/* ---------- doctors (timeline) ---------- */
 
 .schedule {
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 18px;
+  grid-template-rows: auto auto;
+  padding-bottom: var(--s3);
 }
 
 .days {
@@ -488,10 +352,10 @@ button:focus-visible {
 .day {
   display: grid;
   justify-items: center;
-  min-width: 42px;
-  padding: 5px 6px 4px;
+  min-width: 44px;
+  padding: 6px 6px 4px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--r-control);
   background: none;
   line-height: 1.1;
 }
@@ -501,7 +365,7 @@ button:focus-visible {
 }
 
 .day__wd {
-  font-size: 11px;
+  font-size: var(--t-xs);
   color: var(--ink-2);
 }
 
@@ -528,8 +392,8 @@ button:focus-visible {
 .timeline__axis,
 .row {
   display: grid;
-  grid-template-columns: 200px 1fr 36px;
-  gap: 16px;
+  grid-template-columns: 200px 1fr 32px;
+  gap: var(--s2);
   align-items: center;
 }
 
@@ -539,15 +403,15 @@ button:focus-visible {
 
 .timeline__track {
   position: relative;
-  height: 22px;
+  height: 24px;
 }
 
 .tick-label {
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  font-size: 11px;
-  color: var(--ink-3);
+  font-size: var(--t-xs);
+  color: var(--ink-2);
 }
 
 .gridline {
@@ -559,7 +423,7 @@ button:focus-visible {
 }
 
 .row {
-  padding: 9px 0;
+  padding: 10px 0;
   border-top: 1px solid var(--line);
 }
 
@@ -576,7 +440,7 @@ button:focus-visible {
 }
 
 .row__spec {
-  font-size: 12px;
+  font-size: var(--t-sm);
   color: var(--ink-2);
 }
 
@@ -585,8 +449,8 @@ button:focus-visible {
   inset: 0;
   display: flex;
   align-items: center;
-  font-size: 12px;
-  color: var(--ink-3);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
 }
 
 .row__count {
@@ -594,16 +458,16 @@ button:focus-visible {
   color: var(--ink-2);
 }
 
+/* free = outlined, booked = filled */
 .slot {
   position: absolute;
   top: 3px;
   bottom: 3px;
   margin-left: 1px;
-  /* 2px gap between neighbouring half-hour blocks */
-  max-width: calc(100% - 2px);
+  max-width: calc(100% - 2px); /* 2px gap between neighbouring half-hour blocks */
   border: 1px solid var(--ink-3);
-  border-radius: 3px;
-  background: var(--paper);
+  border-radius: 4px;
+  background: var(--surface);
 }
 
 .slot--booked {
@@ -622,25 +486,19 @@ button:focus-visible {
 
 .legend {
   display: flex;
-  gap: 18px;
+  gap: var(--s3);
   padding-top: 12px;
   border-top: 1px solid var(--line);
-  font-size: 12px;
+  font-size: var(--t-sm);
   color: var(--ink-2);
 }
 
-/* ---------- ledger ---------- */
-
-.ledger {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  min-height: 0;
-}
+/* ---------- appointments ---------- */
 
 .ledger__scroll {
   overflow-y: auto;
   min-height: 0;
-  padding: 0 var(--pad) 24px;
+  padding: 0 var(--pad) var(--s2);
 }
 
 table {
@@ -651,37 +509,48 @@ table {
 th {
   position: sticky;
   top: 0;
-  background: var(--paper);
-  padding: 8px 12px 8px 0;
-  border-bottom: 1px solid var(--ink);
+  background: var(--surface);
+  padding: var(--s1) 12px var(--s1) 0;
+  border-bottom: 1px solid var(--line);
   text-align: left;
-  font-size: 12px;
+  font-size: var(--t-sm);
   font-weight: 500;
   color: var(--ink-2);
 }
 
 td {
-  padding: 11px 12px 11px 0;
+  padding: 12px 12px 12px 0;
   border-bottom: 1px solid var(--line);
-  vertical-align: baseline;
+  vertical-align: middle;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .cell-sub {
   display: block;
-  font-size: 12px;
+  white-space: normal;
+  font-size: var(--t-sm);
   color: var(--ink-2);
 }
 
+/* soft status pill: quiet green for Booked, quiet grey for Cancelled */
 .status {
-  font-size: 12px;
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--r-pill);
+  font-size: var(--t-sm);
   font-weight: 500;
 }
 
 .status--booked {
-  color: var(--accent);
+  background: var(--ok-wash);
+  color: var(--ok);
 }
 
 .status--cancelled {
+  background: var(--muted-wash);
   color: var(--ink-2);
 }
 
@@ -697,7 +566,7 @@ td {
 
 /* ---------- motion ---------- */
 
-/* Row / slot that just changed: a brief wash of the accent, then back to paper. */
+/* Row / slot that just changed: a brief wash of the accent, then back. */
 @keyframes flash {
   0%,
   35% {
@@ -734,10 +603,9 @@ tr.flash td {
   }
 }
 
-@keyframes rise {
+@keyframes fade {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
 }
 
@@ -749,8 +617,8 @@ tr.flash td {
   z-index: 10;
   display: grid;
   place-items: center;
-  padding: 24px 16px;
-  background: rgb(20 20 19 / 0.28); /* flat scrim, no blur or gradient */
+  padding: var(--s3) var(--s2);
+  background: rgb(26 26 24 / 0.28); /* flat scrim, no blur or gradient */
   animation: fade 180ms ease-out;
   transition: opacity 200ms ease-in;
 }
@@ -759,15 +627,15 @@ tr.flash td {
   opacity: 0;
 }
 
-/* Two-column dashboard: the phone takes over the call column only, so the slots and appointments
-   it changes stay in full view (and their flash visible) during the call. */
+/* Two-column dashboard: the phone replaces the call panel only, so the slots and appointments it
+   changes stay in full view (and their flash visible) during the call. */
 @media (min-width: 961px) {
   .phone-layer {
-    top: 65px; /* shortcut: measured .topbar height (incl. its border); update if the top bar changes */
+    top: var(--bar-h);
     right: auto;
-    width: 400px; /* = the call column (.layout) */
-    background: var(--paper);
-    border-right: 1px solid var(--line);
+    width: calc(var(--s3) + var(--call-w) + var(--s2)); /* page padding + call panel + gap */
+    padding: var(--s3) var(--s2) var(--s3) var(--s3);
+    background: var(--page);
   }
 }
 
@@ -776,21 +644,21 @@ tr.flash td {
   height: min(720px, 100%);
   display: grid;
   grid-template-rows: auto 1fr auto;
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 32px;
+  border-radius: var(--r-phone);
   overflow: hidden;
 }
 
 .phone__head {
-  padding: 30px 24px 0;
+  padding: var(--s4) var(--s3) 0;
   text-align: center;
   border-bottom: 1px solid var(--line);
 }
 
 .phone__caller {
   height: 20px;
-  margin-bottom: 14px;
+  margin-bottom: var(--s2);
   font-size: 15px;
   letter-spacing: 0.02em;
 }
@@ -801,8 +669,8 @@ tr.flash td {
 }
 
 .phone__activity {
-  margin-top: 10px;
-  font-size: 12px;
+  margin-top: var(--s1);
+  font-size: var(--t-sm);
   color: var(--ink-2);
 }
 
@@ -811,7 +679,7 @@ tr.flash td {
 }
 
 .phone__org {
-  font-size: 12px;
+  font-size: var(--t-sm);
   color: var(--ink-2);
 }
 
@@ -831,11 +699,39 @@ tr.flash td {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-top: 26px;
+  margin-top: var(--s3);
 }
 
 .phone__state {
   animation: fade 160ms ease-out; /* re-keyed on every state change: a short fade, no movement */
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.state__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+
+.state--connecting .state__dot {
+  background: var(--accent);
+  animation: blink 1s steps(2, start) infinite;
+}
+
+.state--connected {
+  color: var(--ink);
+}
+
+.state--connected .state__dot {
+  background: var(--accent);
 }
 
 .phone__timer {
@@ -845,15 +741,66 @@ tr.flash td {
 
 .phone--connecting .phone__timer,
 .phone--ended .phone__timer {
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .phone__meters {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  margin-top: 14px;
+  margin-top: var(--s2);
   border-top: 1px solid var(--line);
   text-align: left;
+}
+
+/* Waveform: bar height follows --level (0..1), written by useCall from the live audio. */
+.meter {
+  --level: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+}
+
+.meter + .meter {
+  padding-left: var(--s2);
+  border-left: 1px solid var(--line);
+}
+
+.meter__label {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+
+.meter__bars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 26px;
+}
+
+.meter__bars i {
+  --k: 1;
+  width: 2px;
+  height: calc(2px + var(--level) * var(--k) * 24px);
+  border-radius: 1px;
+  background: var(--ink); /* caller */
+  transition: height 90ms linear;
+}
+
+.meter--bot .meter__bars i {
+  background: var(--accent); /* Ava */
+}
+
+.meter__bars i:nth-child(1),
+.meter__bars i:nth-child(7) { --k: 0.35; }
+.meter__bars i:nth-child(2),
+.meter__bars i:nth-child(6) { --k: 0.65; }
+.meter__bars i:nth-child(3),
+.meter__bars i:nth-child(5) { --k: 0.9; }
+
+.meter--off .meter__bars i {
+  background: var(--ink-3);
+  height: 2px;
 }
 
 .phone__body {
@@ -864,21 +811,19 @@ tr.flash td {
 
 /* Booked / cancelled during this call: one card above the transcript. */
 .phone__card {
-  margin: 14px 20px 2px;
-  padding: 12px 14px;
-  border: 1px solid var(--accent);
-  border-radius: 14px;
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  margin: var(--s2) 20px 2px;
+  padding: 12px var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--page);
   animation: fade 180ms ease-out;
 }
 
-.phone__card-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--accent);
-}
-
 .phone__card-doc {
-  margin-top: 4px;
+  margin-top: 6px;
   font-weight: 500;
 }
 
@@ -887,22 +832,14 @@ tr.flash td {
   color: var(--ink-2);
 }
 
-.phone__card--cancelled {
-  border-color: var(--line);
-}
-
-.phone__card--cancelled .phone__card-label {
-  color: var(--ink-2);
-}
-
-.phone__card--cancelled .phone__card-when {
+.phone__card--cancelled .phone__card-when:first-of-type {
   text-decoration: line-through;
   text-decoration-color: var(--ink-3);
 }
 
 .phone__note {
   margin: auto 0;
-  padding: 0 32px;
+  padding: 0 var(--s4);
   text-align: center;
   color: var(--ink-2);
   animation: fade 160ms ease-out;
@@ -911,7 +848,7 @@ tr.flash td {
 .phone__lines {
   list-style: none;
   margin: 0;
-  padding: 6px 20px 16px;
+  padding: 6px 20px var(--s2);
   overflow-y: auto;
   min-height: 0;
   flex: 1;
@@ -930,7 +867,7 @@ tr.flash td {
 .pl__who {
   display: block;
   margin-bottom: 2px;
-  font-size: 11px;
+  font-size: var(--t-xs);
   color: var(--ink-2);
 }
 
@@ -948,23 +885,18 @@ tr.flash td {
 
 .phone__foot {
   display: flex;
-  gap: 10px;
-  min-height: 79px;
-  padding: 16px 20px 20px;
+  gap: 12px;
+  min-height: 80px;
+  padding: var(--s2) 20px 20px;
   border-top: 1px solid var(--line);
 }
 
 .phone__foot .btn {
   flex: 1;
+  min-height: 44px;
 }
 
-@keyframes fade {
-  from {
-    opacity: 0;
-  }
-}
-
-/* Touch screens: every button at least 44px tall. */
+/* Touch screens: every control at least 44px tall. */
 @media (pointer: coarse) {
   .btn,
   .day {
@@ -983,35 +915,26 @@ tr.flash td {
 
 /* ---------- narrow screens ---------- */
 
-@media (max-width: 1200px) {
-  .work__top {
-    grid-template-columns: 1fr;
-  }
-
-  .aside {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
-}
-
 @media (max-width: 960px) {
   .app {
     height: auto;
   }
 
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
   }
 
-  .col--call {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
+  .panel--call {
+    grid-row: auto;
   }
 
   .transcript__lines {
     max-height: 50vh;
+  }
+
+  .ledger__scroll {
+    max-height: 70vh;
   }
 
   .timeline__axis,
@@ -1027,23 +950,26 @@ tr.flash td {
 
 @media (max-width: 560px) {
   :root {
-    --pad: 16px;
+    --pad: var(--s2);
+    --t-h1: 24px;
   }
 
-  .figures {
-    grid-template-columns: 1fr 1fr;
+  .topbar,
+  .layout {
+    padding-left: var(--s2);
+    padding-right: var(--s2);
   }
 
-  .figure:nth-child(3) {
-    border-left: 0;
+  .topbar {
+    gap: 12px;
   }
 
-  .figure:nth-child(n + 3) {
-    border-top: 1px solid var(--line);
+  .layout {
+    padding-top: var(--s2);
   }
 
-  .aside {
-    grid-template-columns: 1fr;
+  .banners {
+    padding: var(--s2) var(--s2) 0;
   }
 
   .section-head {
@@ -1062,8 +988,24 @@ tr.flash td {
     display: none;
   }
 
+  /* phone: Doctor column hidden, time moves under the date */
   th:nth-child(2),
-  td:nth-child(2) {
+  td:nth-child(2),
+  th:nth-child(4),
+  td:nth-child(4) {
     display: none;
   }
+
+  th,
+  td {
+    white-space: nowrap;
+  }
+
+  td .only-narrow {
+    display: block;
+  }
+}
+
+.only-narrow {
+  display: none;
 }

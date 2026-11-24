@@ -23,9 +23,9 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
   const pos = (hhmm: string) => ((minutes(hhmm) - startMin) / span) * 100
 
   return (
-    <section className="schedule" aria-label="Doctors and slots">
+    <section className="panel schedule" aria-label="Doctors and slots">
       <header className="section-head">
-        <h2>Availability</h2>
+        <h2>Doctors</h2>
         <nav className="days" aria-label="Day">
           {days.map((d) => {
             const slots = doctors.flatMap((doc) => doc.slots.filter((s) => s.date === d))

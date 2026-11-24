@@ -5,20 +5,20 @@ export function Ledger({ appointments, flashing }: { appointments: Appointment[]
   const live = appointments.filter((a) => a.status === 'booked').length
 
   return (
-    <section className="ledger" aria-label="Appointments">
+    <section className="panel ledger" aria-label="Appointments">
       <header className="section-head">
         <h2>Appointments</h2>
-        <span className="section-meta num">{live} confirmed</span>
+        <span className="section-meta num">{live} booked</span>
       </header>
 
       {appointments.length === 0 ? (
-        <p className="empty">No appointments booked.</p>
+        <p className="empty">No appointments yet.</p>
       ) : (
         <div className="ledger__scroll">
           <table>
             <thead>
               <tr>
-                <th>Caller</th>
+                <th>Patient phone</th>
                 <th>Doctor</th>
                 <th>Date</th>
                 <th>Time</th>
@@ -36,11 +36,14 @@ export function Ledger({ appointments, flashing }: { appointments: Appointment[]
                     {a.doctor}
                     <span className="cell-sub">{a.specialty}</span>
                   </td>
-                  <td className="num">{formatDate(a.date)}</td>
+                  <td className="num">
+                    {formatDate(a.date)}
+                    <span className="cell-sub only-narrow">{formatTime(a.time)}</span>
+                  </td>
                   <td className="num">{formatTime(a.time)}</td>
                   <td>
                     <span className={`status status--${a.status}`}>
-                      {a.status === 'booked' ? 'Confirmed' : 'Cancelled'}
+                      {a.status === 'booked' ? 'Booked' : 'Cancelled'}
                     </span>
                   </td>
                 </tr>

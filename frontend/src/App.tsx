@@ -4,13 +4,14 @@ import { useCall } from './useCall'
 import { useEvents } from './useEvents'
 import { CallConsole } from './components/CallConsole'
 import { Phone } from './components/Phone'
-import { Aside, Figures } from './components/Overview'
+import { Icon } from './components/Icon'
 import { unlockTones } from './tones'
 import { Transcript, type Line } from './components/Transcript'
 import { Schedule } from './components/Schedule'
 import { Ledger } from './components/Ledger'
 
 const FLASH_MS = 2400
+const STATE_LABEL = { idle: 'Idle', connecting: 'Ringing', connected: 'On call', ended: 'Ended' } as const
 
 /** A line still being spoken (final=false) is updated in place; anything else starts a new line. */
 function mergeLine(lines: Line[], e: Extract<ServerEvent, { type: 'transcript' }>, id: number): Line[] {
@@ -98,6 +99,8 @@ export default function App() {
   const link = useEvents(onEvent, load)
   const backendDown = link === 'reconnecting' || loadFailed
 
+  const callError = call.state === 'idle' ? call.error : null // while the phone is open it shows the error itself
+
   const startCall = () => {
     setLines([])
     setPhone(null)
@@ -109,64 +112,63 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">
-          <h1>Sunrise Clinic</h1>
-          <span className="brand__sub">Front desk</span>
-        </div>
-        <span className={`link link--${link}`}>
-          <span className="link__dot" />
-          {link === 'live' ? 'Live' : link === 'connecting' ? 'Connecting' : 'Reconnecting'}
+        <h1 className="brand">Sunrise Clinic</h1>
+        <span className={`pill pill--${call.state}`}>
+          <span className="pill__dot" />
+          {STATE_LABEL[call.state]}
         </span>
+        <button className="btn btn--start" onClick={startCall} disabled={call.state !== 'idle'}>
+          <Icon name="call" />
+          Try Call
+        </button>
       </header>
 
-      {(backendDown || call.error) && (
+      {(backendDown || callError) && (
         <div className="banners" role="status">
           {backendDown && (
-            <p className="banner">Backend unreachable. Start backend/bot.py; this page retries on its own.</p>
-          )}
-          {call.error === 'mic-denied' && (
             <p className="banner">
-              Microphone blocked. Allow microphone access for this site, then start the call again.
+              {link === 'reconnecting'
+                ? 'Backend unreachable. Reconnecting…'
+                : 'Backend unreachable. Start backend/bot.py.'}
             </p>
           )}
-          {call.error === 'unreachable' && <p className="banner">Couldn't connect the call. Is the backend running?</p>}
+          {callError === 'mic-denied' && (
+            <p className="banner">Microphone blocked. Allow it for this site and try again.</p>
+          )}
+          {callError === 'unreachable' && <p className="banner">Couldn't connect the call. Is the backend running?</p>}
         </div>
       )}
 
       <main className="layout">
-        <div className="col col--call">
-          <CallConsole call={call} onStart={startCall} />
+        <section className="panel panel--call" aria-label="Call">
+          <CallConsole call={call} phone={phone} />
           <Transcript lines={lines} />
-        </div>
-        <div className="col col--work">
-          {doctors && appointments && <Figures doctors={doctors} appointments={appointments} />}
-          <div className="work__top">
-            {doctors ? (
-              <Schedule doctors={doctors} day={day} onDay={setDay} flashing={flashing} />
-            ) : (
-              <section className="schedule">
-                <header className="section-head">
-                  <h2>Availability</h2>
-                </header>
-                <p className="empty">{backendDown ? 'Unavailable.' : 'Loading…'}</p>
-              </section>
-            )}
-            {doctors && appointments && <Aside doctors={doctors} appointments={appointments} />}
-          </div>
-          {appointments ? (
-            <Ledger appointments={appointments} flashing={flashing} />
-          ) : (
-            <section className="ledger">
-              <header className="section-head">
-                <h2>Appointments</h2>
-              </header>
-              <p className="empty">{backendDown ? 'Unavailable.' : 'Loading…'}</p>
-            </section>
-          )}
-        </div>
+        </section>
+        {doctors ? (
+          <Schedule doctors={doctors} day={day} onDay={setDay} flashing={flashing} />
+        ) : (
+          <Pending title="Doctors" down={backendDown} />
+        )}
+        {appointments ? (
+          <Ledger appointments={appointments} flashing={flashing} />
+        ) : (
+          <Pending title="Appointments" down={backendDown} />
+        )}
       </main>
 
       <Phone call={call} lines={lines} phone={phone} appt={callAppt} />
     </div>
+  )
+}
+
+/** A panel whose data hasn't arrived: still loading, or the backend is down. */
+function Pending({ title, down }: { title: string; down: boolean }) {
+  return (
+    <section className="panel">
+      <header className="section-head">
+        <h2>{title}</h2>
+      </header>
+      <p className="empty">{down ? 'Unavailable.' : 'Loading…'}</p>
+    </section>
   )
 }

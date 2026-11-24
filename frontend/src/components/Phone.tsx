@@ -4,6 +4,7 @@ import { Timer } from './CallConsole'
 import { formatClock, formatDate, formatPhone, formatTime } from '../format'
 import type { Appointment } from '../api'
 import { hangUpTone, ring } from '../tones'
+import { Icon } from './Icon'
 import type { Line } from './Transcript'
 
 type Call = ReturnType<typeof useCall>
@@ -88,7 +89,7 @@ export function Phone({ call, lines, phone, appt }: Props) {
           )}
           <div className="phone__meters" aria-hidden="true">
             <Meter label="You" bind={bindCallerMeter} off={state !== 'connected' || muted} />
-            <Meter label="Ava" bind={bindBotMeter} off={state !== 'connected'} />
+            <Meter label="Ava" bot bind={bindBotMeter} off={state !== 'connected'} />
           </div>
         </header>
 
@@ -105,11 +106,12 @@ export function Phone({ call, lines, phone, appt }: Props) {
                   className={`phone__card phone__card--${appt.status}`}
                   role="status"
                 >
-                  <span className="phone__card-label">{appt.status === 'booked' ? 'Booked' : 'Cancelled'}</span>
+                  <span className={`status status--${appt.status}`}>{appt.status === 'booked' ? 'Booked' : 'Cancelled'}</span>
                   <p className="phone__card-doc">{appt.doctor}</p>
                   <p className="phone__card-when num">
                     {formatDate(appt.date)} · {formatTime(appt.time)}
                   </p>
+                  <p className="phone__card-when num">{formatPhone(appt.phone)}</p>
                 </div>
               )}
               {lines.length === 0 ? (
@@ -137,9 +139,11 @@ export function Phone({ call, lines, phone, appt }: Props) {
                 disabled={state !== 'connected'}
                 aria-pressed={muted}
               >
+                <Icon name={muted ? 'muted' : 'mic'} />
                 {muted ? 'Unmute' : 'Mute'}
               </button>
               <button className="btn btn--end" onClick={end} ref={endBtn}>
+                <Icon name="end" />
                 End call
               </button>
             </>
@@ -156,9 +160,11 @@ export function Phone({ call, lines, phone, appt }: Props) {
   )
 }
 
-function Meter({ label, bind, off }: { label: string; bind: Call['bindCallerMeter']; off?: boolean }) {
+type MeterProps = { label: string; bind: Call['bindCallerMeter']; off?: boolean; bot?: boolean }
+
+function Meter({ label, bind, off, bot }: MeterProps) {
   return (
-    <div className={`meter${off ? ' meter--off' : ''}`} ref={bind}>
+    <div className={`meter${bot ? ' meter--bot' : ''}${off ? ' meter--off' : ''}`} ref={bind}>
       <span className="meter__label">{label}</span>
       <span className="meter__bars">
         <i />
