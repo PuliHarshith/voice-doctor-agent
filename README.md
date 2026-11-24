@@ -4,19 +4,19 @@
 
 A voice receptionist you talk to in the browser: it checks doctors' free slots, books and cancels appointments, and a live dashboard shows every step.
 
-Demo video: (link)
+<!-- TODO before submitting: add the demo video link here -->
 
 Live dashboard (read-only, sample data): https://puliharshith.github.io/voice-doctor-agent/. Voice calls need the backend running on your machine (below), so Try Call is off there.
 
 You talk to Ava, a receptionist, from your browser. She can check a doctor's free slots, book an appointment and cancel one. She knows who you are only from the phone number you say. She reads it back digit by digit, and nothing is booked or cancelled until you say yes.
 
-- **Voice pipeline:** Pipecat 1.17 (Python), in `backend/`
+- **Voice pipeline:** Pipecat 1.17.0 (Python), in `backend/`
 - **Speech to text:** ElevenLabs Scribe v2 Realtime (streaming, English)
 - **Text to speech:** ElevenLabs Flash v2.5, voice "Sarah"
 - **LLM:** Google Gemini, `gemini-3.5-flash-lite` (free tier from Google AI Studio)
 - **Turn detection:** Silero VAD plus Pipecat's Smart Turn v3 model, both running locally
 - **Data:** SQLite with six mock doctors, a week of slots and a demo week of bookings, seeded automatically
-- **Dashboard:** React 19, Vite and TypeScript, in `frontend/`
+- **Dashboard:** React 19, Vite and TypeScript, in `frontend/`. Top to bottom: a top bar (clock, Live marker, call status, Paper / Ink switch, Try Call); four figures (booked today, free slots today, cancelled this week, next appointment); two charts (This week, Doctor load); the Doctors timeline for one day; then Transcript beside Appointments, which has a patient search
 
 How the parts fit together is in [PIPELINE.md](PIPELINE.md).
 
@@ -35,6 +35,13 @@ How the parts fit together is in [PIPELINE.md](PIPELINE.md).
 ## Run it
 
 You need Python 3.11, Node 20 or newer, an ElevenLabs API key and a Google AI Studio API key. Both keys have free plans.
+
+### 0. Get the code
+
+```bash
+git clone https://github.com/PuliHarshith/voice-doctor-agent.git
+cd voice-doctor-agent
+```
 
 ### 1. Backend (port 7860)
 
