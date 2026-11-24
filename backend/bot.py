@@ -101,6 +101,9 @@ async def bot(runner_args: RunnerArguments):
         settings=ElevenLabsTTSService.Settings(
             # Sarah, a *premade* voice: free-tier API keys get 402 on library voices (no audio at all)
             voice=os.getenv("ELEVENLABS_VOICE_ID") or "EXAVITQu4vr4xnSDxMaL",
+            model=os.getenv("ELEVENLABS_TTS_MODEL") or "eleven_flash_v2_5",  # lowest-latency ElevenLabs model
+            stability=float(os.getenv("ELEVENLABS_STABILITY") or 0.5),
+            similarity_boost=float(os.getenv("ELEVENLABS_SIMILARITY") or 0.75),
         ),
     )
     llm = GoogleLLMService(
