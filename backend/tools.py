@@ -222,6 +222,14 @@ def make_tools(session: Session) -> list:
                 err = f"{speak_time(hhmm)} today has already passed. Offer a later time."
             if err:
                 return await params.result_callback({"error": err})
+            # one caller can't be in two rooms at once: refuse a second booking at the same date and time
+            clash = next((a for a in db.upcoming_appointments(conn, session.phone)
+                          if a["date"] == iso and a["time"] == hhmm), None)
+            if clash:
+                return await params.result_callback({
+                    "error": f"The caller already has an appointment with {clash['doctor']} at {speak_time(hhmm)} "
+                             f"on {day_name(iso)}. Tell them, then offer another time or ask whether to cancel that one.",
+                })
             appt_id = db.book(conn, session.phone, d["id"], iso, hhmm)
             if appt_id is None:
                 free = [speak_time(s["time"]) for s in db.free_slots(conn, d["id"], iso)[:MAX_TIMES]]

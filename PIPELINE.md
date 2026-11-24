@@ -45,7 +45,7 @@ Gemini calls these as Pipecat function calls. Each one reads or writes SQLite ([
 |---|---|
 | `check_doctor_availability` | Free slots by doctor or specialty, date, or both. Gemini turns "tomorrow" into a date, using the "Today is …" line in the prompt. |
 | `confirm_phone_number` | Saves the caller's number for this call, but only if checks in code pass (below). |
-| `book_appointment` | Books a slot under the confirmed number. Refuses if no number is confirmed or the slot is taken. |
+| `book_appointment` | Books a slot under the confirmed number. Refuses if no number is confirmed, the slot is taken, or the caller already has an appointment at that time. |
 | `cancel_appointment` | Called without an id, it only lists the confirmed number's upcoming appointments. Ava names one and asks "Shall I cancel it?", and only after a yes calls again with that id. The row is set to `cancelled`, never deleted. |
 
 **Why confirming the number is checked in code.** The caller is identified only by the number they say, so a misheard digit would book under someone else's number. The prompt asks Gemini to read the number back, but a prompt can't guarantee it. So before `confirm_phone_number` accepts a number, the code checks two things:

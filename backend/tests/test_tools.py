@@ -111,7 +111,9 @@ def test_book_then_slot_is_gone(tools):
     assert r["booked"] and r["time"] == "10:30 AM" and r["phone"] == PHONE
     times = call(tools.check, doctor="Sharma", date=TOMORROW)["availability"][0]["available_times"]
     assert "10:30 AM" not in times
-    again = call(tools.book, doctor="Sharma", date=TOMORROW, time="10:30")
+    assert "already has an appointment" in call(tools.book, doctor="Sharma", date=TOMORROW, time="10:30")["error"]
+    other_book = make_tools(Session(phone="9000000000"))[2]  # a different caller wants the same slot
+    again = call(other_book, doctor="Sharma", date=TOMORROW, time="10:30")
     assert "no open slot" in again["error"] and again["other_times_that_day"]
 
 
@@ -147,6 +149,14 @@ def test_cancel_single_and_frees_slot(tools):
     assert r["cancelled"] and r["doctor"] == "Dr. Priya Iyer"
     assert "2 PM" in call(tools.check, doctor="Iyer", date=TOMORROW)["availability"][0]["available_times"]
     assert "no upcoming appointments" in call(tools.cancel)["error"]
+
+
+def test_book_refuses_a_second_doctor_at_the_same_time(tools):
+    confirmed(tools)
+    assert call(tools.book, doctor="Sharma", date=TOMORROW, time="09:30")["booked"]
+    r = call(tools.book, doctor="Mehta", date=TOMORROW, time="09:30")
+    assert "already has an appointment with Dr. Ananya Sharma" in r["error"]
+    assert call(tools.book, doctor="Mehta", date=TOMORROW, time="10:00")["booked"]  # another time is fine
 
 
 def test_cancel_with_several_asks_which(tools):
