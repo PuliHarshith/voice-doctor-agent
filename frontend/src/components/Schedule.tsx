@@ -77,6 +77,7 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
                 className={`day${d === active ? ' day--active' : ''}`}
                 onClick={() => onDay(d)}
                 aria-pressed={d === active}
+                disabled={freeOn(d) === 0} // nothing left to book that day
                 title={`${slots.length - booked} free, ${booked} booked`}
               >
                 <span className="day__wd">{weekday(d)}</span>

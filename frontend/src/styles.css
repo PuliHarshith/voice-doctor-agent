@@ -423,6 +423,15 @@ button {
   border-color: var(--ink);
 }
 
+.day:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.day:disabled:hover {
+  border-color: transparent;
+}
+
 .timeline {
   padding: 0 var(--s3);
 }

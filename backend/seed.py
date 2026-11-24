@@ -18,20 +18,20 @@ DOCTORS = [
     ("Dr. Sneha Kapoor", "Pediatrician", MORNING + EVENING),
     ("Dr. Arjun Nair", "ENT Specialist", EVENING),
 ]
-DAYS = 7
+DAYS = 7  # every day: 9:00-12:30 and/or 2:00-5:30 per doctor, lunch 1-2 PM
 
 # A few bookings so the timeline looks lived in: (doctor, nth free upcoming slot, phone). Placed relative to
 # now, so they are always in the future. None uses the demo caller's number (98765 43210).
 DEMO_BOOKINGS = [
-    ("Dr. Ananya Sharma", 0, "9811122233"),
-    ("Dr. Ananya Sharma", 3, "9822233344"),
-    ("Dr. Rohan Mehta", 2, "9833344455"),
-    ("Dr. Priya Iyer", 1, "9844455566"),
-    ("Dr. Sneha Kapoor", 5, "9855566677"),
-    ("Dr. Arjun Nair", 4, "9866677788"),
-    ("Dr. Vikram Rao", 9, "9877788899"),
+    ("Dr. Ananya Sharma", 0, "9840127356"),
+    ("Dr. Ananya Sharma", 3, "8197462035"),
+    ("Dr. Rohan Mehta", 2, "7019348826"),
+    ("Dr. Priya Iyer", 1, "9663051479"),
+    ("Dr. Sneha Kapoor", 5, "8861724503"),
+    ("Dr. Arjun Nair", 4, "7406395812"),
+    ("Dr. Vikram Rao", 9, "9538270164"),
 ]
-DEMO_CANCELLED = ("Dr. Priya Iyer", 6, "9888899900")
+DEMO_CANCELLED = ("Dr. Priya Iyer", 6, "6360482917")
 
 
 def add_upcoming_slots(conn) -> None:
