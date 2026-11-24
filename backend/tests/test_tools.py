@@ -122,7 +122,21 @@ def test_book_validation(tools):
     assert "no open slot" in call(tools.book, doctor="Mehta", date=TOMORROW, time="3 PM")["error"]  # morning only
 
 
+def test_book_past_date_and_unknown_doctor(tools):
+    confirmed(tools)
+    assert "in the past" in call(tools.book, doctor="Sharma", date="2000-01-01", time="09:00")["error"]
+    assert "Our doctors are" in call(tools.book, doctor="Dr. Who", date=TOMORROW, time="09:00")["error"]
+    assert "not a valid date" in call(tools.book, doctor="Sharma", date="25/11", time="09:00")["error"]
+
+
 # --- cancelling ---
+
+def test_cancel_twice_and_with_no_booking(tools):
+    confirmed(tools)
+    assert "no upcoming appointments" in call(tools.cancel)["error"]
+    a = call(tools.book, doctor="Iyer", date=TOMORROW, time="2 PM")["appointment_id"]
+    assert call(tools.cancel, appointment_id=a)["cancelled"]
+    assert "no upcoming appointments" in call(tools.cancel, appointment_id=a)["error"]
 
 def test_cancel_single_and_frees_slot(tools):
     confirmed(tools)
@@ -132,7 +146,7 @@ def test_cancel_single_and_frees_slot(tools):
     r = call(tools.cancel, appointment_id=a)
     assert r["cancelled"] and r["doctor"] == "Dr. Priya Iyer"
     assert "2 PM" in call(tools.check, doctor="Iyer", date=TOMORROW)["availability"][0]["available_times"]
-    assert "No upcoming" in call(tools.cancel)["error"]
+    assert "no upcoming appointments" in call(tools.cancel)["error"]
 
 
 def test_cancel_with_several_asks_which(tools):
@@ -149,7 +163,7 @@ def test_cannot_cancel_someone_elses_appointment(tools):
     confirmed(tools)
     appt = call(tools.book, doctor="Iyer", date=TOMORROW, time="2:00 PM")["appointment_id"]
     other = make_tools(Session(phone="9000000000"))[3]
-    assert "No upcoming" in call(other, appointment_id=appt)["error"]
+    assert "no upcoming appointments" in call(other, appointment_id=appt)["error"]
 
 
 # --- events ---

@@ -129,7 +129,7 @@ def check_date(value: str) -> tuple[str | None, str | None]:
     if iso is None:
         return None, f"'{value}' is not a valid date. Use YYYY-MM-DD."
     if iso < Date.today().isoformat():
-        return None, f"{iso} is in the past."
+        return None, f"{iso} is in the past. Offer today or a later day."
     return iso, None
 
 
@@ -139,7 +139,7 @@ def make_tools(session: Session) -> list:
         digit by digit and the caller explicitly said yes. Booking and cancelling need this first.
 
         Args:
-            phone_number: The 10-digit number exactly as you read it back, e.g. "9876543210".
+            phone_number: The 10 digits exactly as you read them back, digits only, e.g. "9876543210".
         """
         # Any new attempt drops the old number: if the caller is switching numbers and this one is
         # rejected, booking must not silently fall back to the previous one.
@@ -205,8 +205,8 @@ def make_tools(session: Session) -> list:
 
         Args:
             doctor: Doctor name or specialty, e.g. "Dr. Ananya Sharma".
-            date: Date as YYYY-MM-DD.
-            time: Time like "10:30 AM" or "14:30".
+            date: Date as YYYY-MM-DD (work out "tomorrow" or "next Tuesday" from today's date).
+            time: Time as HH:MM, 24-hour, e.g. "14:30" ("2:30 PM" is also accepted).
         """
         if not session.phone:
             return await params.result_callback({"error": "Phone number not confirmed yet. Ask for it, read it "
@@ -256,7 +256,8 @@ def make_tools(session: Session) -> list:
             listed = [{"appointment_id": a["id"], "doctor": a["doctor"], "date": a["date"],
                        "day": day_name(a["date"]), "time": speak_time(a["time"])} for a in upcoming]
             if not upcoming:
-                return await params.result_callback({"error": "No upcoming appointments for this phone number."})
+                return await params.result_callback({"error": "There are no upcoming appointments under this number. "
+                                                          "Say so, and offer to book one or to try another number."})
             if appointment_id is None:  # never cancel on the first call: the caller confirms which one first
                 return await params.result_callback({
                     "appointments": listed, "next": "Nothing is cancelled yet. Name the appointment (or ask which "

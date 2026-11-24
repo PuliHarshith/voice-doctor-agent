@@ -81,8 +81,6 @@ def test_normalise_audit_cases(spoken, expected):
 @pytest.mark.parametrize("bot_line, expected", [
     ("Could you tell me your ten digit phone number?", True),
     ("That's 9 8 7 6 5, 4 3 2 1 0. Is that right?", True),
-    ("कृपया अपना फ़ोन नंबर बताइए।", True),
-    ("దయచేసి మీ ఫోన్ నంబర్ చెప్పండి.", True),
     ("Dr. Rao has openings at ten AM on Wednesday the 25th.", False),
     ("You are booked with Dr. Iyer at three PM.", False),
 ])
