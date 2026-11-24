@@ -4,9 +4,9 @@ import { formatClock } from '../format'
 
 type Call = ReturnType<typeof useCall>
 
-const LABEL = { idle: 'Idle', connecting: 'Connecting', connected: 'Connected', ended: 'Ended' } as const
+const LABEL = { idle: 'Idle', connecting: 'Ringing', connected: 'Connected', ended: 'Ended' } as const
 
-function Timer({ since }: { since: number }) {
+export function Timer({ since }: { since: number }) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 250)
@@ -15,20 +15,9 @@ function Timer({ since }: { since: number }) {
   return <>{formatClock(Math.max(0, Math.floor((now - since) / 1000)))}</>
 }
 
-function Meter({ label, bind, off }: { label: string; bind: Call['bindCallerMeter']; off?: boolean }) {
-  return (
-    <div className={`meter${off ? ' meter--off' : ''}`} ref={bind} aria-hidden="true">
-      <span className="meter__label">{label}</span>
-      <span className="meter__bars">
-        <i /><i /><i /><i /><i /><i /><i />
-      </span>
-    </div>
-  )
-}
-
+/** Dashboard call card: state, timer and the Try Call button. The call itself runs in <Phone>. */
 export function CallConsole({ call, onStart }: { call: Call; onStart: () => void }) {
-  const { state, muted, connectedAt, end, toggleMute, bindBotAudio, bindCallerMeter, bindBotMeter } = call
-  const live = state === 'connecting' || state === 'connected'
+  const { state, connectedAt, bindBotAudio } = call
 
   return (
     <section className="console" aria-label="Call">
@@ -42,33 +31,13 @@ export function CallConsole({ call, onStart }: { call: Call; onStart: () => void
         </span>
       </div>
 
-      <div className="console__meters">
-        <Meter label="Caller" bind={bindCallerMeter} off={!live || muted} />
-        <Meter label="Ava" bind={bindBotMeter} off={!live} />
-      </div>
-
       <div className="console__actions">
-        {live ? (
-          <>
-            <button className="btn btn--end" onClick={end}>
-              End call
-            </button>
-            <button
-              className="btn btn--quiet"
-              onClick={toggleMute}
-              disabled={state !== 'connected'}
-              aria-pressed={muted}
-            >
-              {muted ? 'Unmute' : 'Mute'}
-            </button>
-          </>
-        ) : (
-          <button className="btn btn--start" onClick={onStart}>
-            Start call
-          </button>
-        )}
+        <button className="btn btn--start" onClick={onStart} disabled={state !== 'idle'}>
+          Try Call
+        </button>
       </div>
 
+      {/* Stays mounted on the dashboard so the bot's audio keeps playing whatever the overlay does. */}
       <audio ref={bindBotAudio} autoPlay />
     </section>
   )

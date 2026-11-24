@@ -3,6 +3,7 @@ import { apptKey, getJSON, slotKey, type Appointment, type Doctor, type ServerEv
 import { useCall } from './useCall'
 import { useEvents } from './useEvents'
 import { CallConsole } from './components/CallConsole'
+import { Phone } from './components/Phone'
 import { Transcript, type Line } from './components/Transcript'
 import { Schedule } from './components/Schedule'
 import { Ledger } from './components/Ledger'
@@ -142,6 +143,8 @@ export default function App() {
           )}
         </div>
       </main>
+
+      <Phone call={call} lines={lines} />
     </div>
   )
 }

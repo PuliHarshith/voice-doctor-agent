@@ -24,6 +24,7 @@ export function useCall() {
   const [error, setError] = useState<CallError>(null)
   const [muted, setMuted] = useState(false)
   const [connectedAt, setConnectedAt] = useState<number | null>(null)
+  const [endedAt, setEndedAt] = useState<number | null>(null)
   const client = useRef<PipecatClient | null>(null)
   const botAudio = useRef<HTMLAudioElement | null>(null)
   const callerMeter = useRef<HTMLDivElement | null>(null)
@@ -59,7 +60,7 @@ export function useCall() {
 
   const finish = useCallback(() => {
     client.current = null
-    setConnectedAt(null)
+    setEndedAt(Date.now()) // connectedAt is kept, so the ended screen can show the call length
     setState((s) => (s === 'idle' ? s : 'ended'))
     stopMeters.current.forEach((stop) => stop())
     stopMeters.current = []
@@ -71,6 +72,8 @@ export function useCall() {
     if (client.current) return
     setError(null)
     setMuted(false)
+    setConnectedAt(null)
+    setEndedAt(null)
     setState('connecting')
     postCallState('start')
 
@@ -91,15 +94,18 @@ export function useCall() {
       enableCam: false,
       callbacks: {
         onBotReady: () => {
+          // An abandoned attempt (mic blocked, or ended while ringing) can still finish connecting: hang it up.
+          if (client.current !== pc) return void pc.disconnect().catch(() => {})
           setConnectedAt(Date.now())
           setState('connected')
         },
         onDisconnected: () => {
+          if (client.current !== pc) return // already finished; don't end a newer call
           postCallState('end')
           finish()
         },
         onTrackStarted: (track, participant) => {
-          if (track.kind !== 'audio') return
+          if (track.kind !== 'audio' || client.current !== pc) return
           if (participant?.local) return meterTrack(track, callerMeter) // muting disables the track -> level 0
           if (botAudio.current) {
             botAudio.current.srcObject = new MediaStream([track])
@@ -148,6 +154,9 @@ export function useCall() {
     setMuted(!muted)
   }, [muted])
 
+  /** Back to the dashboard once the call screen has shown "ended". */
+  const dismiss = useCallback(() => setState((s) => (s === 'ended' ? 'idle' : s)), [])
+
   // Hang up if the tab is closed mid-call, so the bot session ends too.
   useEffect(() => () => void client.current?.disconnect(), [])
 
@@ -156,5 +165,5 @@ export function useCall() {
   const bindCallerMeter = useCallback((el: HTMLDivElement | null) => void (callerMeter.current = el), [])
   const bindBotMeter = useCallback((el: HTMLDivElement | null) => void (botMeter.current = el), [])
 
-  return { state, error, muted, connectedAt, start, end, toggleMute, bindBotAudio, bindCallerMeter, bindBotMeter }
+  return { state, error, muted, connectedAt, endedAt, start, end, toggleMute, dismiss, bindBotAudio, bindCallerMeter, bindBotMeter }
 }

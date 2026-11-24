@@ -66,8 +66,17 @@ class AudioDebugLogger(BaseObserver):
     def __init__(self):
         super().__init__()
         self._t0 = time.monotonic()
+        self._last = None
+        self._bot_speaking = False
 
     async def on_push_frame(self, data: FramePushed):
-        name = self.NAMES.get(type(data.frame))
-        if name and data.first_push:
-            logger.info(f"AUDIO {time.monotonic() - self._t0:7.2f}s  {name}")
+        f = data.frame
+        name = self.NAMES.get(type(f))
+        if not name or not data.first_push or name == self._last:
+            return  # system frames travel both ways as two frames: log the first only
+        if isinstance(f, InterruptionFrame) and not self._bot_speaking:
+            return  # sent at every caller turn start; only a real cut-off is worth a line
+        self._last = name
+        if isinstance(f, (BotStartedSpeakingFrame, BotStoppedSpeakingFrame)):
+            self._bot_speaking = isinstance(f, BotStartedSpeakingFrame)
+        logger.info(f"AUDIO {time.monotonic() - self._t0:7.2f}s  {name}")

@@ -53,6 +53,16 @@ A voice agent that a caller talks to in the browser. It can check a doctor's ava
 - Frontend polish counts: "real, professional, top-notch work".
 - Core requirements come first. Bonus work doesn't make up for missing core.
 
+## Design rules (frontend)
+- Palette, used everywhere through the CSS variables in `frontend/src/styles.css`:
+  - background `--paper` #FAF9F6 (off-white)
+  - ink `--ink` #141413 (near-black); secondary text at 62% and tertiary at 38% of that ink
+  - hairlines `--line` #E5E4DF
+  - the ONE accent `--accent` #B4462B (terracotta), for live, booked and the primary action only
+- Type: serif headings (Instrument Serif), sans UI (Inter), tabular numerals for every number, time and phone number.
+- 1px hairline borders. No gradients, no drop shadows, no emojis, no marketing copy.
+- Motion: short fades (≤200 ms), no bouncing; respects prefers-reduced-motion.
+
 ## Working rules
 - Never commit `.env` or keys.
 - Keep the code small enough to explain line by line.

@@ -216,15 +216,6 @@ button:focus-visible {
   color: var(--ink-3);
 }
 
-.console__meters {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  margin: 22px 0 20px;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
 .meter {
   --level: 0;
   display: flex;
@@ -626,6 +617,155 @@ tr.flash td {
   from {
     opacity: 0;
     transform: translateY(4px);
+  }
+}
+
+/* ---------- phone call screen (overlay) ---------- */
+
+.phone-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: rgb(20 20 19 / 0.28); /* flat scrim, no blur or gradient */
+  animation: fade 180ms ease-out;
+  transition: opacity 200ms ease-in;
+}
+
+.phone-layer--closing {
+  opacity: 0;
+}
+
+.phone {
+  width: min(360px, 100%);
+  height: min(720px, 100%);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 32px;
+  overflow: hidden;
+}
+
+.phone__head {
+  padding: 30px 24px 0;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.phone__org {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.phone__name {
+  margin-top: 6px;
+  font: 400 40px/1 var(--serif);
+  letter-spacing: -0.01em;
+}
+
+.phone__role {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.phone__status {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 26px;
+}
+
+.phone__state {
+  animation: fade 160ms ease-out; /* re-keyed on every state change: a short fade, no movement */
+}
+
+.phone__timer {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.phone--connecting .phone__timer,
+.phone--ended .phone__timer {
+  color: var(--ink-3);
+}
+
+.phone__meters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.phone__body {
+  display: grid;
+  min-height: 0;
+}
+
+.phone__note {
+  align-self: center;
+  padding: 0 32px;
+  text-align: center;
+  color: var(--ink-2);
+  animation: fade 160ms ease-out;
+}
+
+.phone__lines {
+  list-style: none;
+  margin: 0;
+  padding: 6px 20px 16px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.pl {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  animation: fade 160ms ease-out;
+}
+
+.pl:first-child {
+  border-top: 0;
+}
+
+.pl__who {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.pl--assistant .pl__who {
+  color: var(--accent);
+}
+
+.pl__text {
+  overflow-wrap: anywhere;
+}
+
+.pl--partial .pl__text {
+  color: var(--ink-2);
+}
+
+.phone__foot {
+  display: flex;
+  gap: 10px;
+  min-height: 79px;
+  padding: 16px 20px 20px;
+  border-top: 1px solid var(--line);
+}
+
+.phone__foot .btn {
+  flex: 1;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
   }
 }
 
