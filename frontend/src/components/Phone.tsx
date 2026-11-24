@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import type { useCall } from '../useCall'
+import { FLAT, RIBBON_H, RIBBON_W, type useCall } from '../useCall'
 import { Timer } from './Clock'
 import { formatClock, formatDate, formatPhone, formatTime } from '../format'
 import type { Appointment } from '../api'
 import { hangUpTone, ring } from '../tones'
 import { Icon } from './Icon'
-import type { Line } from './Transcript'
+import { ChatLines, type Line } from './Transcript'
+import { ReadBack } from './ReadBack'
 
 type Call = ReturnType<typeof useCall>
 
@@ -14,15 +15,13 @@ const ENDED_MS = 1600 // how long "Call ended" stays up before the screen fades 
 const FADE_MS = 200 // matches .phone-layer transition
 const ACTIVITY = { listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking' } as const
 
-/** Phone-style call screen over the dashboard: ringing -> connected -> ended. */
 type Props = { call: Call; lines: Line[]; phone: string | null; appt: Appointment | null }
 
+/** Phone-style call sheet: ringing -> connected -> ended. */
 export function Phone({ call, lines, phone, appt }: Props) {
   const { state, error, muted, activity, connectedAt, endedAt, end, toggleMute, dismiss, bindCallerMeter, bindBotMeter } = call
   const [closing, setClosing] = useState(false)
-  const box = useRef<HTMLOListElement>(null)
   const endBtn = useRef<HTMLButtonElement>(null)
-  const last = lines[lines.length - 1]
 
   // Ended without an error: show it briefly, fade out, then back to the dashboard.
   // With an error the screen stays until closed, so the message can be read.
@@ -48,11 +47,6 @@ export function Phone({ call, lines, phone, appt }: Props) {
     if (state === 'ended' && !error) hangUpTone()
   }, [state, error])
 
-  useEffect(() => {
-    const el = box.current
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-  }, [lines.length, last?.text])
-
   if (state === 'idle') return null
   const live = state === 'connecting' || state === 'connected'
 
@@ -60,13 +54,8 @@ export function Phone({ call, lines, phone, appt }: Props) {
     <div className={`phone-layer${closing ? ' phone-layer--closing' : ''}`}>
       <section className={`phone phone--${state}`} role="dialog" aria-label="Call with Ava">
         <header className="phone__head">
-          {/* Line is always there so nothing shifts when the number arrives. */}
-          <p className="phone__caller num" aria-label="Caller's confirmed number">
-            {phone && <span key={phone}>{formatPhone(phone)}</span>}
-          </p>
           <p className="phone__org">Sunrise Clinic</p>
           <h2 className="phone__name">Ava</h2>
-          <p className="phone__role">Receptionist</p>
           <div className="phone__status">
             <span key={state} className={`state state--${state} phone__state`}>
               <span className="state__dot" />
@@ -82,17 +71,34 @@ export function Phone({ call, lines, phone, appt }: Props) {
               )}
             </span>
           </div>
-          {state === 'connected' && (
-            <p key={activity} className={`phone__activity phone__activity--${activity}`} aria-live="polite">
-              {ACTIVITY[activity]}
-            </p>
-          )}
-          <div className="phone__meters" aria-hidden="true">
-            <Meter label="You" bind={bindCallerMeter} off={state !== 'connected' || muted} />
-            <Meter label="Ava" bot bind={bindBotMeter} off={state !== 'connected'} />
+          {/* Always there, so nothing shifts when the number arrives. */}
+          <div className="phone__caller" aria-label="Caller's confirmed number">
+            <ReadBack key={phone} phone={phone} />
           </div>
+          <p key={activity} className={`phone__activity phone__activity--${activity}`} aria-live="polite">
+            {state === 'connected' ? ACTIVITY[activity] : ' '}
+          </p>
+          <svg
+            className={`ribbon${state === 'connected' ? '' : ' ribbon--off'}`}
+            viewBox={`0 0 ${RIBBON_W} ${RIBBON_H}`}
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            {/* useCall redraws these paths every frame from the live audio; React only sets the start. */}
+            <path className="ribbon__caller" ref={bindCallerMeter} d={FLAT} />
+            <path className="ribbon__bot" ref={bindBotMeter} d={FLAT} />
+          </svg>
+          <p className="ribbon__key" aria-hidden="true">
+            <span>
+              <i />
+              You
+            </span>
+            <span>
+              <i className="is-bot" />
+              Ava
+            </span>
+          </p>
         </header>
-
         <div className="phone__body">
           {error === 'mic-denied' ? (
             <p className="phone__note">Microphone blocked. Allow it for this site and try again.</p>
@@ -117,14 +123,7 @@ export function Phone({ call, lines, phone, appt }: Props) {
               {lines.length === 0 ? (
                 <p className="phone__note">{state === 'connecting' ? 'Connecting to the front desk…' : 'Say hello.'}</p>
               ) : (
-                <ol className="phone__lines" ref={box} aria-live="polite">
-                  {lines.map((l) => (
-                    <li key={l.id} className={`pl pl--${l.role}${l.final ? '' : ' pl--partial'}`}>
-                      <span className="pl__who">{l.role === 'user' ? 'You' : 'Ava'}</span>
-                      <p className="pl__text">{l.text}</p>
-                    </li>
-                  ))}
-                </ol>
+                <ChatLines lines={lines} />
               )}
             </>
           )}
@@ -156,25 +155,6 @@ export function Phone({ call, lines, phone, appt }: Props) {
           )}
         </footer>
       </section>
-    </div>
-  )
-}
-
-type MeterProps = { label: string; bind: Call['bindCallerMeter']; off?: boolean; bot?: boolean }
-
-function Meter({ label, bind, off, bot }: MeterProps) {
-  return (
-    <div className={`meter${bot ? ' meter--bot' : ''}${off ? ' meter--off' : ''}`} ref={bind}>
-      <span className="meter__label">{label}</span>
-      <span className="meter__bars">
-        <i />
-        <i />
-        <i />
-        <i />
-        <i />
-        <i />
-        <i />
-      </span>
     </div>
   )
 }

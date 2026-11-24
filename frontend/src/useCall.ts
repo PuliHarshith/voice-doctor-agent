@@ -8,8 +8,31 @@ export type CallState = 'idle' | 'connecting' | 'connected' | 'ended'
 export type CallError = 'mic-denied' | 'unreachable' | null
 export type Activity = 'listening' | 'thinking' | 'speaking'
 
-const setLevel = (el: HTMLDivElement | null, level: number) =>
-  el?.style.setProperty('--level', Math.min(1, level * 5).toFixed(3))
+// Voice ribbon geometry, in the SVG's viewBox units (see Phone.tsx).
+export const RIBBON_W = 300
+export const RIBBON_H = 56
+const POINTS = 48
+const GAIN = 3 // speech rarely passes 0.3 of full scale; this fills the ribbon without clipping often
+export const FLAT = `M0 ${RIBBON_H / 2} L${RIBBON_W} ${RIBBON_H / 2}`
+
+/** Draw a slice of the waveform as one smooth line. A sine envelope pins both ends to the middle, so
+ * it reads as a ribbon rather than a raw oscilloscope; quadratic curves through midpoints smooth it. */
+function drawRibbon(path: SVGPathElement | null, buf: Float32Array | null) {
+  if (!path) return
+  if (!buf) return path.setAttribute('d', FLAT)
+  const mid = RIBBON_H / 2
+  const pts = Array.from({ length: POINTS + 1 }, (_, i) => {
+    const v = Math.max(-1, Math.min(1, buf[Math.floor((i * (buf.length - 1)) / POINTS)] * GAIN))
+    return [(i * RIBBON_W) / POINTS, mid + v * Math.sin((Math.PI * i) / POINTS) * (mid - 2)]
+  })
+  let d = `M${pts[0][0]} ${pts[0][1].toFixed(1)}`
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1]
+    const [x1, y1] = pts[i]
+    d += ` Q${x0} ${y0.toFixed(1)} ${(x0 + x1) / 2} ${((y0 + y1) / 2).toFixed(1)}`
+  }
+  path.setAttribute('d', d)
+}
 
 const isMicDenied = (e: unknown) =>
   (e instanceof DeviceError && e.type === 'permissions') ||
@@ -29,15 +52,16 @@ export function useCall() {
   const [activity, setActivity] = useState<Activity>('listening')
   const client = useRef<PipecatClient | null>(null)
   const botAudio = useRef<HTMLAudioElement | null>(null)
-  const callerMeter = useRef<HTMLDivElement | null>(null)
-  const botMeter = useRef<HTMLDivElement | null>(null)
+  const callerMeter = useRef<SVGPathElement | null>(null)
+  const botMeter = useRef<SVGPathElement | null>(null)
 
   const audioCtx = useRef<AudioContext | null>(null)
   const stopMeters = useRef<(() => void)[]>([])
 
-  /** RMS level of a WebRTC audio track, read every animation frame with a Web Audio analyser.
-   * (SmallWebRTCTransport never emits onRemoteAudioLevel for WebRTC tracks, so we measure ourselves.) */
-  const meterTrack = useCallback((track: MediaStreamTrack, target: { current: HTMLDivElement | null }) => {
+  /** Waveform of a WebRTC audio track, read every animation frame with a Web Audio analyser and drawn
+   * straight onto an SVG path (no re-renders). SmallWebRTCTransport has no audio-level events for
+   * WebRTC tracks, so we measure ourselves. */
+  const meterTrack = useCallback((track: MediaStreamTrack, target: { current: SVGPathElement | null }) => {
     const ctx = (audioCtx.current ??= new AudioContext())
     const source = ctx.createMediaStreamSource(new MediaStream([track]))
     const analyser = ctx.createAnalyser()
@@ -47,16 +71,14 @@ export function useCall() {
     let frame = 0
     const tick = () => {
       analyser.getFloatTimeDomainData(buf)
-      let sum = 0
-      for (const v of buf) sum += v * v
-      setLevel(target.current, Math.sqrt(sum / buf.length))
+      drawRibbon(target.current, buf)
       frame = requestAnimationFrame(tick)
     }
     tick()
     stopMeters.current.push(() => {
       cancelAnimationFrame(frame)
       source.disconnect()
-      setLevel(target.current, 0)
+      drawRibbon(target.current, null)
     })
   }, [])
 
@@ -117,7 +139,7 @@ export function useCall() {
         },
         onTrackStarted: (track, participant) => {
           if (track.kind !== 'audio' || client.current !== pc) return
-          if (participant?.local) return meterTrack(track, callerMeter) // muting disables the track -> level 0
+          if (participant?.local) return meterTrack(track, callerMeter) // muting disables the track -> flat line
           if (botAudio.current) {
             botAudio.current.srcObject = new MediaStream([track])
             botAudio.current.play().catch(() => {}) // autoplay is allowed: the call starts from a click
@@ -173,8 +195,8 @@ export function useCall() {
 
   // Callback refs, so components attach elements without reading ref objects during render.
   const bindBotAudio = useCallback((el: HTMLAudioElement | null) => void (botAudio.current = el), [])
-  const bindCallerMeter = useCallback((el: HTMLDivElement | null) => void (callerMeter.current = el), [])
-  const bindBotMeter = useCallback((el: HTMLDivElement | null) => void (botMeter.current = el), [])
+  const bindCallerMeter = useCallback((el: SVGPathElement | null) => void (callerMeter.current = el), [])
+  const bindBotMeter = useCallback((el: SVGPathElement | null) => void (botMeter.current = el), [])
 
   return { state, error, muted, activity, connectedAt, endedAt, start, end, toggleMute, dismiss, bindBotAudio, bindCallerMeter, bindBotMeter }
 }
