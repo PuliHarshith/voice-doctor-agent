@@ -4,6 +4,7 @@ import { useCall } from './useCall'
 import { useEvents } from './useEvents'
 import { Clock } from './components/Clock'
 import { Figures } from './components/Figures'
+import { Charts } from './components/Charts'
 import { Phone } from './components/Phone'
 import { Icon } from './components/Icon'
 import { unlockTones } from './tones'
@@ -178,6 +179,7 @@ export default function App() {
 
       <main className="board">
         {doctors && appointments && <Figures doctors={doctors} appointments={appointments} />}
+        {doctors && <Charts doctors={doctors} />}
         {doctors ? (
           <Schedule doctors={doctors} day={day} onDay={setDay} flashing={flashing} />
         ) : (

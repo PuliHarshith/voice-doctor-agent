@@ -1,6 +1,7 @@
-"""Mock doctors and slots. `python seed.py` resets the demo data (doctors, a week of slots and a few
-bookings); the bot calls ensure_seeded() at startup."""
+"""Mock doctors and slots. `python seed.py` resets the demo data (doctors, a week of slots and a realistic
+spread of bookings); the bot calls ensure_seeded() at startup."""
 
+import random
 from datetime import date, timedelta
 
 from loguru import logger
@@ -20,18 +21,20 @@ DOCTORS = [
 ]
 DAYS = 7  # every day: 9:00-12:30 and/or 2:00-5:30 per doctor, lunch 1-2 PM
 
-# A few bookings so the timeline looks lived in: (doctor, nth free upcoming slot, phone). Placed relative to
-# now, so they are always in the future. None uses the demo caller's number (98765 43210).
-DEMO_BOOKINGS = [
-    ("Dr. Ananya Sharma", 0, "9840127356"),
-    ("Dr. Ananya Sharma", 3, "8197462035"),
-    ("Dr. Rohan Mehta", 2, "7019348826"),
-    ("Dr. Priya Iyer", 1, "9663051479"),
-    ("Dr. Sneha Kapoor", 5, "8861724503"),
-    ("Dr. Arjun Nair", 4, "7406395812"),
-    ("Dr. Vikram Rao", 9, "9538270164"),
-]
-DEMO_CANCELLED = ("Dr. Priya Iyer", 6, "6360482917")
+# Demo bookings: a clinic week is busiest in the next couple of days and thins out after. Each upcoming
+# slot is booked with this probability, by days from today; fixed seed, so every reset is the same week.
+DEMO_SEED = 7
+DEMO_FILL = [0.45, 0.38, 0.3, 0.24, 0.18, 0.14, 0.1]
+DEMO_CANCEL = 0.06  # share of demo bookings that were later cancelled
+DEMO_CALLER = "9876543210"  # the number used in the demo video: never pre-booked
+
+
+def demo_phone(rng: random.Random) -> str:
+    """A plausible Indian mobile: starts 6-9, ten digits."""
+    while True:
+        phone = rng.choice("6789") + "".join(rng.choice("0123456789") for _ in range(9))
+        if phone != DEMO_CALLER:
+            return phone
 
 
 def add_upcoming_slots(conn) -> None:
@@ -56,19 +59,20 @@ def seed(conn) -> None:
 
 
 def add_demo_bookings(conn) -> int:
-    """Book DEMO_BOOKINGS (and one cancelled) on upcoming free slots. Returns how many were booked."""
-    ids = {d["name"]: d["id"] for d in db.all_doctors(conn)}
+    """Book a realistic share of upcoming slots (and cancel a few). Returns how many stay booked."""
+    rng = random.Random(DEMO_SEED)
     booked = 0
-    for name, nth, phone in DEMO_BOOKINGS + [DEMO_CANCELLED]:
-        free = db.free_slots(conn, ids[name])
-        if nth >= len(free):
-            continue  # late in the week: fewer slots left than the plan expects
-        s = free[nth]
-        appt = db.book(conn, phone, ids[name], s["date"], s["time"])
-        if appt and (name, nth, phone) == DEMO_CANCELLED:
-            db.cancel(conn, appt, phone)
-        elif appt:
-            booked += 1
+    for d in db.all_doctors(conn):
+        for s in db.free_slots(conn, d["id"]):  # upcoming only, so demo bookings are never in the past
+            offset = (date.fromisoformat(s["date"]) - date.today()).days
+            if rng.random() >= DEMO_FILL[min(offset, len(DEMO_FILL) - 1)]:
+                continue
+            phone = demo_phone(rng)
+            appt = db.book(conn, phone, d["id"], s["date"], s["time"])
+            if appt and rng.random() < DEMO_CANCEL:
+                db.cancel(conn, appt, phone)
+            elif appt:
+                booked += 1
     return booked
 
 
@@ -92,4 +96,4 @@ def ensure_seeded(conn) -> None:
 
 if __name__ == "__main__":
     n = reset_demo(db.connect())
-    print(f"Demo data reset: {len(DOCTORS)} doctors, {DAYS} days of slots, {n} bookings + 1 cancelled, in {db.DB_PATH}")
+    print(f"Demo data reset: {len(DOCTORS)} doctors, {DAYS} days of slots, {n} bookings, in {db.DB_PATH}")

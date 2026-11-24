@@ -10,6 +10,7 @@
   --ink-3: rgb(27 26 23 / 0.28); /* idle marks only, never text */
   --line: #e3ded4; /* hairlines */
   --line-soft: #efebe4; /* quiet row dividers */
+  --chart-free: #e4ded2; /* free slots in the week chart: a neutral step, not a hue */
   --accent: #0f6e6a; /* deep teal */
   --on-accent: #ffffff; /* text on the accent */
   /* the accent is only for Try Call, booked slots, the now needle and Ava's voice; everything else
@@ -63,6 +64,7 @@
   --ink-3: rgb(238 234 226 / 0.24);
   --line: #2d2b27;
   --line-soft: #242320;
+  --chart-free: #3a3731;
   --accent: #4fb3a9;
   --on-accent: #0c1413;
   --green-ink: #9fd6cb;
@@ -356,6 +358,164 @@ button {
   color: var(--ink-label);
 }
 
+/* ---------- charts ---------- */
+
+.charts {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--s2);
+}
+
+.chart {
+  grid-template-rows: auto 1fr;
+}
+
+.chart-key {
+  display: flex;
+  gap: var(--s2);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+}
+
+.key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border-radius: 2px;
+}
+
+.key--booked {
+  background: var(--accent);
+}
+
+.key--free {
+  background: var(--chart-free);
+}
+
+/* week: 7 stacked columns on one baseline; the max is the only tick */
+.week {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  padding: var(--s0) var(--s3) 40px;
+}
+
+.week__tick {
+  align-self: start;
+  margin-top: -7px;
+  font-size: var(--t-label);
+  color: var(--ink-label);
+}
+
+.week__plot {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: 150px;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.week__col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: default;
+}
+
+.week__cap {
+  min-height: 16px;
+  font-size: var(--t-small);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* <= 24px wide, 2px surface gap between segments, rounded only at the data end */
+.week__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 24px;
+  transition: height 300ms ease-out;
+}
+
+.week__stack > * {
+  min-height: 2px;
+  transition: flex-grow 300ms ease-out;
+}
+
+.week__stack > :first-child {
+  border-radius: 4px 4px 0 0;
+}
+
+.week__free {
+  background: var(--chart-free);
+}
+
+.week__booked {
+  background: var(--accent);
+}
+
+.week__col:hover .week__stack {
+  filter: brightness(0.96);
+}
+
+.week__day {
+  position: absolute;
+  top: calc(100% + 8px);
+  display: grid;
+  justify-items: center;
+  font-size: var(--t-small);
+  line-height: 1.2;
+}
+
+/* doctor load: horizontal bars, one hue (green ink) on a lighter step of it */
+.load {
+  display: grid;
+  align-content: start;
+  gap: var(--s1);
+  margin: 0;
+  padding: var(--s0) var(--s3) var(--s3);
+  list-style: none;
+}
+
+.load__row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 40px;
+  gap: var(--s1);
+  align-items: center;
+  font-size: var(--t-small);
+  cursor: default;
+}
+
+.load__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.load__track {
+  height: 10px;
+  border-radius: 0 4px 4px 0;
+  background: var(--green-wash);
+}
+
+.load__fill {
+  display: block;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  background: var(--green-ink);
+  transition: width 300ms ease-out;
+}
+
+.load__pct {
+  text-align: right;
+  font-weight: 600;
+}
+
 /* ---------- figures ---------- */
 
 .figures {
@@ -615,8 +775,10 @@ button {
   background: var(--green-wash);
 }
 
-/* hover details: time and status above the slot */
-.slot[data-tip]::after {
+/* hover details above the mark: slots, week columns, load rows */
+.slot[data-tip]::after,
+.week__col[data-tip]::after,
+.load__row[data-tip]::after {
   content: attr(data-tip);
   position: absolute;
   bottom: calc(100% + 8px);
@@ -634,7 +796,9 @@ button {
   transition: opacity 120ms;
 }
 
-.slot:hover::after {
+.slot:hover::after,
+.week__col:hover::after,
+.load__row:hover::after {
   opacity: 1;
 }
 
@@ -1411,6 +1575,10 @@ tr.flash td {
 /* ---------- narrow screens ---------- */
 
 @media (max-width: 960px) {
+  .charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .board__row {
     grid-template-columns: minmax(0, 1fr);
     height: auto;

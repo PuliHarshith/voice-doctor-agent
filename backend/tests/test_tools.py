@@ -262,11 +262,11 @@ def test_demo_bookings_are_future_and_never_the_demo_callers_number():
     conn = db.connect()
     n = seed.add_demo_bookings(conn)
     appts = db.all_appointments(conn)
-    assert n == len(seed.DEMO_BOOKINGS) and len(appts) == n + 1
+    assert n == sum(a["status"] == "booked" for a in appts) and n > 20  # a lived-in week, not a handful
     today, now = db.now_local()
     assert all((a["date"], a["time"]) > (today, now) for a in appts)
     assert PHONE not in {a["phone"] for a in appts}
-    assert sum(a["status"] == "cancelled" for a in appts) == 1
+    assert all(len(a["phone"]) == 10 and a["phone"][0] in "6789" for a in appts)
 
 
 def test_db_path_is_absolute():
