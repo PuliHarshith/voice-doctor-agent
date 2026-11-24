@@ -9,8 +9,7 @@
   --accent-wash: rgb(180 70 43 / 0.12);
 
   --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
-  /* Inter has no Devanagari or Telugu glyphs; the browser falls through to Noto for those characters only. */
-  --sans: 'Inter', 'Noto Sans Devanagari', 'Noto Sans Telugu', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --pad: 28px;
   color-scheme: light;

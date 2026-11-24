@@ -16,15 +16,11 @@ from pipecat.services.llm_service import FunctionCallParams
 
 import db
 from events import bus
-from phone import TOKEN, normalise
+from phone import normalise
 
 YES = {"yes", "yeah", "yep", "yup", "ya", "yah", "correct", "right", "exactly", "sure", "haan", "han",
-       "ha", "ok", "okay", "absolutely", "confirmed", "perfect", "affirmative",
-       "हाँ", "हां", "जी", "सही", "ठीक", "बिल्कुल", "ji", "sahi", "theek", "bilkul",  # Hindi
-       "అవును", "ఔను", "సరే", "సరి", "కరెక్ట్", "avunu", "sare"}  # Telugu
-NO = {"no", "nope", "nah", "not", "wrong", "incorrect", "wait",
-      "नहीं", "नही", "ना", "गलत", "ग़लत", "रुको", "nahi", "nahin", "galat",  # Hindi
-      "కాదు", "లేదు", "వద్దు", "తప్పు", "ఆగండి", "kaadu", "ledu", "vaddu", "tappu"}  # Telugu
+       "ha", "ok", "okay", "absolutely", "confirmed", "perfect", "affirmative"}
+NO = {"no", "nope", "nah", "not", "wrong", "incorrect", "wait"}
 MAX_TIMES = 8  # keep spoken lists short
 
 
@@ -62,13 +58,13 @@ def logged(tool):
 
 def read_back(bot_text: str, phone: str) -> bool:
     """Some sentence of the bot's message is exactly this number: no extra or missing digits.
-    Per sentence, so a date or time said in the same message ("...at five PM. Your number is...")
-    doesn't count against it, while a read-back with an extra digit is still rejected."""
-    return any(normalise(s) == phone for s in re.split(r"[.?!।\n]+", bot_text))
+    Per sentence, so a time said in the same message ("...at five PM. Your number is...") doesn't
+    count against it, while a read-back with an extra digit is still rejected."""
+    return any(normalise(s) == phone for s in re.split(r"[.?!\n]+", bot_text))
 
 
 def is_yes(text: str) -> bool:
-    words = set(TOKEN.findall(text.lower()))  # Indic-safe tokenizer shared with phone.py
+    words = set(re.findall(r"[a-z]+", text.lower()))
     return bool(words & YES) and not words & NO
 
 
