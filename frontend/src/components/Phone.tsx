@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { useCall } from '../useCall'
-import { Timer } from './CallConsole'
+import { Timer } from './Clock'
 import { formatClock, formatDate, formatPhone, formatTime } from '../format'
 import type { Appointment } from '../api'
 import { hangUpTone, ring } from '../tones'

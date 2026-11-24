@@ -24,3 +24,6 @@ export const minutes = (hhmm: string) => {
   const [h, m] = hhmm.split(':').map(Number)
   return h * 60 + m
 }
+
+/** This machine's date as YYYY-MM-DD (the backend runs on the same clock). */
+export const today = () => new Date().toLocaleDateString('en-CA')

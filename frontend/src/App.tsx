@@ -1,8 +1,9 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { apptKey, getJSON, slotKey, type Appointment, type Doctor, type ServerEvent } from './api'
 import { useCall } from './useCall'
 import { useEvents } from './useEvents'
-import { CallConsole } from './components/CallConsole'
+import { Clock } from './components/Clock'
+import { Figures } from './components/Figures'
 import { Phone } from './components/Phone'
 import { Icon } from './components/Icon'
 import { unlockTones } from './tones'
@@ -13,6 +14,28 @@ import { Ledger } from './components/Ledger'
 const FLASH_MS = 2400
 const STATE_LABEL = { idle: 'Idle', connecting: 'Ringing', connected: 'On call', ended: 'Ended' } as const
 
+type Theme = 'paper' | 'ink'
+
+/** Paper (light) or Ink (dark), remembered per browser. Storage can be blocked, so every access is guarded. */
+function useTheme() {
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      return localStorage.getItem('theme') === 'ink' ? 'ink' : 'paper'
+    } catch {
+      return 'paper'
+    }
+  })
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    try {
+      localStorage.setItem('theme', theme)
+    } catch {
+      // not saved: the choice lasts for this visit only
+    }
+  }, [theme])
+  return [theme, () => setTheme((t) => (t === 'paper' ? 'ink' : 'paper'))] as const
+}
+
 /** A line still being spoken (final=false) is updated in place; anything else starts a new line. */
 function mergeLine(lines: Line[], e: Extract<ServerEvent, { type: 'transcript' }>, id: number): Line[] {
   for (let i = lines.length - 1; i >= 0; i--) {
@@ -22,7 +45,7 @@ function mergeLine(lines: Line[], e: Extract<ServerEvent, { type: 'transcript' }
       return next
     }
   }
-  return [...lines, { id, role: e.role, text: e.text, final: e.final }]
+  return [...lines, { id, role: e.role, text: e.text, final: e.final, ts: e.ts * 1000 }]
 }
 
 const markSlot = (doctors: Doctor[] | null, a: Appointment, booked: boolean) =>
@@ -43,6 +66,8 @@ export default function App() {
   const [flashing, setFlashing] = useState<Set<string>>(() => new Set())
   const lineId = useRef(0)
   const call = useCall()
+  const { bindBotAudio } = call
+  const [theme, toggleTheme] = useTheme()
 
   const load = useCallback(async () => {
     try {
@@ -110,13 +135,21 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${call.state === 'idle' ? '' : ' app--sheet'}`}>
       <header className="topbar">
-        <h1 className="brand">Sunrise Clinic</h1>
+        <h1 className="wordmark">Sunrise Clinic</h1>
+        <Clock />
         <span className={`pill pill--${call.state}`}>
           <span className="pill__dot" />
           {STATE_LABEL[call.state]}
         </span>
+        <button
+          className="btn btn--quiet theme-toggle"
+          onClick={toggleTheme}
+          aria-label={`Switch to ${theme === 'paper' ? 'Ink' : 'Paper'} theme`}
+        >
+          {theme === 'paper' ? 'Ink' : 'Paper'}
+        </button>
         <button className="btn btn--start" onClick={startCall} disabled={call.state !== 'idle'}>
           <Icon name="call" />
           Try Call
@@ -139,23 +172,25 @@ export default function App() {
         </div>
       )}
 
-      <main className="layout">
-        <section className="panel panel--call" aria-label="Call">
-          <CallConsole call={call} phone={phone} />
-          <Transcript lines={lines} />
-        </section>
+      <main className="board">
+        {doctors && appointments && <Figures doctors={doctors} appointments={appointments} />}
         {doctors ? (
           <Schedule doctors={doctors} day={day} onDay={setDay} flashing={flashing} />
         ) : (
           <Pending title="Doctors" down={backendDown} />
         )}
-        {appointments ? (
-          <Ledger appointments={appointments} flashing={flashing} />
-        ) : (
-          <Pending title="Appointments" down={backendDown} />
-        )}
+        <div className="board__row">
+          <Transcript lines={lines} phone={phone} />
+          {appointments ? (
+            <Ledger appointments={appointments} flashing={flashing} />
+          ) : (
+            <Pending title="Appointments" down={backendDown} />
+          )}
+        </div>
       </main>
 
+      {/* Stays mounted so the bot's audio keeps playing whatever the call sheet does. */}
+      <audio ref={bindBotAudio} autoPlay />
       <Phone call={call} lines={lines} phone={phone} appt={callAppt} />
     </div>
   )
