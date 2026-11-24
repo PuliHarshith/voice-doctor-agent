@@ -53,37 +53,45 @@ A voice agent that a caller talks to in the browser. It can check a doctor's ava
 - Frontend polish counts: "real, professional, top-notch work".
 - Core requirements come first. Bonus work doesn't make up for missing core.
 
-## Design rules (frontend)
-Calm, professional healthcare dashboard for one job: run a voice call and watch doctors, slots and
-appointments update live. Original design: no UI kit, no template code. All tokens are CSS variables in
+## Design rules (frontend): "operations console"
+Original design, written from scratch: no UI kit, no animation library, no template code, markup, class
+names, icons or assets. Information density that stays readable. All tokens are CSS variables in
 `frontend/src/styles.css`; use them, never raw values.
 
-- Layout: slim top bar (serif product name, status pill Idle / Ringing / On call / Ended, Try Call).
-  No sidebar or nav. Below it, three panels: Call (timer, confirmed caller number, transcript) on the
-  left over both rows; Doctors (day timeline) above Appointments (table) on the right. At 960px and below,
-  the panels stack. At 560px and below, the table drops Doctor and puts the time under the date.
-- The phone call screen covers the Call panel only on wide screens, so slot and row flashes stay visible.
-  On phones it is a full overlay.
-- Colour:
-  - `--page` #F6F4EF warm off-white page; `--surface` #FFFFFF panels and phone
-  - `--ink` #1A1A18 text; `--ink-2` ink at 64% for secondary text; `--ink-3` ink at 30% for idle marks only, never text
-  - `--line` #E6E2D9 warm grey hairline
-  - ONE accent `--accent` #B4462B vermilion: Try Call, live state, Ava's waveform, booked slots, row flashes
-    (`--accent-wash` = accent at 10%)
-  - status pills: Booked `--ok` #2E6A4C on `--ok-wash` #E7F1EB; Cancelled `--ink-2` on `--muted-wash` #EFEDE8
-- Type: Instrument Serif for headings, the product name and the timer; Inter for UI. Sizes: `--t-xs` 11,
-  `--t-sm` 12, `--t-md` 14 (body), `--t-h2` 24, `--t-h1` 28, `--t-timer` 48 px. Tabular numerals for
-  every number, time and phone number.
-- Space: 8px scale `--s1` 8, `--s2` 16, `--s3` 24, `--s4` 32. Panel padding `--pad` 24 (16 on phones),
-  page padding 24, gap between panels 16.
-- Shape: `--r-panel` 16px, `--r-phone` 28px, `--r-control` 8px, `--r-pill` pill. 1px hairline borders.
-  No shadows. Frame sizes: `--bar-h` 64px, `--call-w` 380px.
+- Layout (1440px): slim top bar (wordmark, live clock, status pill, theme toggle, Try Call). Row 1: three
+  plain figures (Booked today, Free slots, Cancelled today; all counted for today's date). Row 2: doctor
+  day lanes with the slot timeline. Row 3: Transcript (chat widget, large confirmed number on top) beside
+  Appointments (table, newest first). No sidebar or menus.
+- Call sheet: on wide screens docked on the right while the board makes room (nothing is covered, so lane
+  stamps and row flashes stay visible); on phones a full-screen overlay. Holds state, timer, read-back,
+  Listening/Thinking/Speaking, voice ribbon, confirmation card, chat, Mute, End call.
+- 390px: figures stay three across; lanes stack name over track; the table drops Doctor and moves the
+  time under the date; the clock and status pill hide.
+- Themes: Paper (light, default) and Ink (dark) via `html[data-theme]`, toggled in the top bar, saved in
+  localStorage inside try/catch, applied before first paint by a script in index.html.
+- Colour tokens (Paper / Ink):
+  - `--page` #F5F2EC / #12110F; `--surface` #FFFFFF / #1A1917; `--sunken` #F0ECE4 / #24221F
+  - `--ink` #1B1A17 / #EEEAE2; `--ink-2` ink at 64% / 66% (secondary text); `--ink-3` 28% / 24% (idle marks, never text)
+  - `--line` #E3DED4 / #2D2B27
+  - ONE accent `--accent` deep teal #0F6E6A / #4FB3A9, `--on-accent` #FFFFFF / #0C1413,
+    `--accent-wash` accent at 10% / 14% (Booked pill, Ava's bubbles, row flash)
+  - `--muted-wash` #ECE8E0 / #262420 (Cancelled pill); `--scrim` ink 32% / black 50% (phone overlay)
+- Type: `--display` Fraunces (650-750, optical size set per use) for the wordmark, headings, figures, day
+  numbers and the read-back; `--sans` Inter for UI. Sizes: `--t-xs` 11, `--t-sm` 12, `--t-md` 14 (body),
+  `--t-lg` 16, `--t-h2` 22, `--t-wordmark` 22, `--t-number` 30, `--t-figure` 40 px (smaller on phones).
+  Tabular numerals for every number, time and phone number.
+- Space: `--s-1` 4, `--s0` 8, `--s1` 12, `--s2` 16, `--s3` 24, `--s4` 32 px.
+- Shape: `--r-box` 12, `--r-sheet` 24, `--r-control` 8, `--r-bubble` 14, `--r-pill` 999 px. 1px hairlines,
+  no shadows. Frame: `--bar-h` 56, `--sheet-w` 380, `--chat-w` 400 px.
+- Signature moments: a "now" marker crossing today's lanes; a booked slot stamped onto its lane (scale in,
+  no overshoot); the read-back typing the confirmed number digit by digit, then drawing a check mark; a
+  hand-drawn voice ribbon (SVG path from the AnalyserNode waveform; caller in ink, Ava in teal).
 - Icons: only call, mute and end call; 1.5px stroke, drawn in `components/Icon.tsx`.
-- Banned: gradients, drop shadows, emojis, icon-in-circle chips, stat-card rows, charts, marketing copy,
-  "Welcome back". Copy stays terse: Try Call, Transcript, Doctors, Appointments, End call, Booked,
-  Cancelled, Free.
-- Motion: short fades (200ms or less), accent flash on changed rows and slots, voice-reactive waveform,
-  nothing bounces; respects prefers-reduced-motion. Visible focus ring (2px accent) on everything focusable.
+- Banned: sidebars with menu groups, icon-in-circle tiles, charts, greetings, stock illustrations,
+  gradients, emojis, marketing copy. Copy: Try Call, Transcript, Doctors, Appointments, End call,
+  Booked, Cancelled, Free.
+- Motion: short fades (200ms or less), the stamp and row flash, the ribbon; all of it honours
+  prefers-reduced-motion (the read-back shows the full number at once). Visible 2px accent focus ring.
 - Touch: controls at least 44px tall on touch screens.
 
 ## Working rules
