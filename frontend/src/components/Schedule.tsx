@@ -1,5 +1,5 @@
 import { slotKey, type Doctor } from '../api'
-import { dayOfMonth, formatTime, minutes, today, weekday } from '../format'
+import { dayOfMonth, formatTime, hourLabel, minutes, today, weekday } from '../format'
 import { useNow } from '../useNow'
 import { Empty } from './Empty'
 
@@ -21,8 +21,6 @@ const initials = (name: string) =>
     .map((w) => w[0])
     .slice(0, 2)
     .join('')
-
-const hourLabel = (h: number) => `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`
 
 export function Schedule({ doctors, day, onDay, flashing }: Props) {
   const days = [...new Set(doctors.flatMap((d) => d.slots.map((s) => s.date)))].sort()
@@ -93,7 +91,7 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
         <Empty>No open slots.</Empty>
       ) : (
         // keyed by day: switching days fades the lanes in
-        <div className="timeline" key={active}>
+        <div className={`timeline${span <= 4 * 60 ? ' timeline--roomy' : ''}`} key={active}>
           <div className="timeline__axis" aria-hidden="true">
             <span className="label">Doctor</span>
             <div className={`lane${collapsed ? ' lane--collapsed' : ''}`}>
@@ -106,7 +104,7 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
                 ))}
                 {nowAt && (
                   <span className="now-label num" style={{ left: nowAt }}>
-                    {clock}
+                    {formatTime(clock)}
                   </span>
                 )}
               </div>

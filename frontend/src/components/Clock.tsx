@@ -1,4 +1,4 @@
-import { formatClock } from '../format'
+import { clockTime, formatClock } from '../format'
 import { useNow } from '../useNow'
 
 /** Wall clock for the top bar, "14:05". */
@@ -6,7 +6,7 @@ export function Clock() {
   const now = useNow(10_000)
   return (
     <time className="clock num" dateTime={new Date(now).toISOString()}>
-      {new Date(now).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+      {clockTime(new Date(now))}
     </time>
   )
 }

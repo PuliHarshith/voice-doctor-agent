@@ -3,7 +3,7 @@ const parseDate = (iso: string) => new Date(`${iso}T00:00:00`)
 /** "9703065715" -> "97030 65715" (how Indian mobile numbers are usually grouped) */
 export const formatPhone = (p: string) => (p.length === 10 ? `${p.slice(0, 5)} ${p.slice(5)}` : p)
 
-/** "15:00" -> "3:00 PM" */
+/** "15:00" -> "3:00 PM". The one time format in the app. */
 export function formatTime(hhmm: string) {
   const [h, m] = hhmm.split(':').map(Number)
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
@@ -27,3 +27,9 @@ export const minutes = (hhmm: string) => {
 
 /** This machine's date as YYYY-MM-DD (the backend runs on the same clock). */
 export const today = () => new Date().toLocaleDateString('en-CA')
+
+/** A Date's local time in the app's format: "5:13 PM". */
+export const clockTime = (d: Date) => formatTime(d.toTimeString().slice(0, 5))
+
+/** Whole hour on the axis: 9 -> "9 AM", 12 -> "12 PM". */
+export const hourLabel = (h: number) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`

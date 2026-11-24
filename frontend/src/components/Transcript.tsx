@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { ReadBack } from './ReadBack'
+import { clockTime } from '../format'
 import { Empty } from './Empty'
 
 /** ts: when the line started, ms since epoch (from the server event). */
 export type Line = { id: number; role: 'user' | 'assistant'; text: string; final: boolean; ts: number }
-
-const clock = (ms: number) => new Date(ms).toLocaleTimeString('en-GB')
 
 /** Transcript widget on the board: the confirmed number on top, the conversation below. */
 export function Transcript({ lines, phone }: { lines: Line[]; phone: string | null }) {
@@ -43,7 +42,7 @@ export function ChatLines({ lines }: { lines: Line[] }) {
         <li key={l.id} className={`bubble bubble--${l.role}${l.final ? '' : ' bubble--partial'}`}>
           <span className="sr-only">{l.role === 'user' ? 'Caller' : 'Ava'}:</span>
           <p className="bubble__text">{l.text}</p>
-          <time className="bubble__time num">{clock(l.ts)}</time>
+          <time className="bubble__time num">{clockTime(new Date(l.ts))}</time>
         </li>
       ))}
     </ol>

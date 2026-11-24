@@ -11,24 +11,26 @@
   --line: #e3ded4; /* hairlines */
   --accent: #0f6e6a; /* deep teal */
   --on-accent: #ffffff; /* text on the accent */
-  --accent-wash: rgb(15 110 106 / 0.1);
-  --accent-line: rgb(15 110 106 / 0.5); /* free slot outline */
+  /* the accent is only for Try Call, booked slots, the now needle and Ava's voice; everything else
+     that needs colour uses this deeper ink green */
+  --green-ink: #134e44; /* headings, key numbers, free slots, focus, Booked pill */
+  --green-wash: rgb(19 78 68 / 0.08);
+  --green-line: rgb(19 78 68 / 0.45); /* free slot outline */
+  --ink-label: rgb(27 26 23 / 0.74); /* small-caps labels: darker than --ink-2 */
   --muted-wash: #ece8e0; /* Cancelled pill */
   --scrim: rgb(27 26 23 / 0.32);
 
   /* type */
   --display: 'Fraunces', Georgia, serif;
   --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --t-xs: 11px; /* labels, axis, chips: the smallest text anywhere */
-  --t-sm: 12px; /* secondary lines */
-  --t-ui: 13px; /* controls, state, banners */
-  --t-md: 14px; /* body */
-  --t-lg: 18px; /* day numbers */
-  --t-h2: 20px; /* panel headings */
-  --t-wordmark: 22px;
-  --t-number: 28px; /* confirmed phone number, Ava in the call sheet */
-  --t-figure: 60px; /* stat numbers */
-  --t-timer: 80px; /* call timer */
+  /* type: four steps - display, heading, body, label - plus three fixed sizes */
+  --t-display: 60px; /* serif: stat numbers */
+  --t-heading: 22px; /* serif: panel headings, wordmark, Ava, the confirmed number */
+  --t-body: 14px; /* sans: everything you read */
+  --t-label: 11px; /* sans small caps: labels, axis, chips (the smallest text anywhere) */
+  --t-small: 12px; /* sans: secondary lines under body text */
+  --t-day: 18px; /* serif: day tab numbers */
+  --t-timer: 80px; /* serif: call timer */
 
   /* space: 4px base, 8px rhythm */
   --s-1: 4px;
@@ -61,8 +63,10 @@
   --line: #2d2b27;
   --accent: #4fb3a9;
   --on-accent: #0c1413;
-  --accent-wash: rgb(79 179 169 / 0.14);
-  --accent-line: rgb(79 179 169 / 0.55);
+  --green-ink: #9fd6cb;
+  --green-wash: rgb(159 214 203 / 0.12);
+  --green-line: rgb(159 214 203 / 0.45);
+  --ink-label: rgb(238 234 226 / 0.74);
   --muted-wash: #262420;
   --scrim: rgb(0 0 0 / 0.5);
   color-scheme: dark;
@@ -84,7 +88,7 @@ body {
   margin: 0;
   background: var(--page);
   color: var(--ink);
-  font: 400 var(--t-md) / 1.5 var(--sans);
+  font: 400 var(--t-body) / 1.5 var(--sans);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -101,7 +105,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--green-ink);
   outline-offset: 2px;
 }
 
@@ -116,11 +120,11 @@ button {
 
 /* The one small-label style: figures, table heads, axis heads, "Caller". */
 .label {
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--ink-label);
 }
 
 /* visible to screen readers only */
@@ -149,7 +153,7 @@ button {
 }
 
 .wordmark {
-  font: 700 var(--t-wordmark) / 1 var(--display);
+  font: 700 var(--t-heading) / 1 var(--display);
   font-variation-settings: 'opsz' 72;
   letter-spacing: -0.02em;
 }
@@ -158,7 +162,7 @@ button {
   margin-right: auto;
   padding-left: var(--s2);
   border-left: 1px solid var(--line);
-  font-size: var(--t-sm);
+  font-size: var(--t-small);
   color: var(--ink-2);
 }
 
@@ -169,7 +173,7 @@ button {
   padding: var(--s-1) var(--s1);
   border: 1px solid var(--line);
   border-radius: var(--r-pill);
-  font-size: var(--t-sm);
+  font-size: var(--t-small);
   color: var(--ink-2);
 }
 
@@ -181,17 +185,17 @@ button {
 }
 
 .pill--connecting .pill__dot {
-  background: var(--accent);
+  background: var(--green-ink);
   animation: blink 1s steps(2, start) infinite;
 }
 
 .pill--connected {
   color: var(--ink);
-  border-color: var(--accent);
+  border-color: var(--green-ink);
 }
 
 .pill--connected .pill__dot {
-  background: var(--accent);
+  background: var(--green-ink);
 }
 
 /* ---------- buttons ---------- */
@@ -233,14 +237,14 @@ button {
 }
 
 .btn--end:hover:not(:disabled) {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--green-ink);
+  border-color: var(--green-ink);
   color: var(--on-accent);
 }
 
 .btn--quiet[aria-pressed='true'] {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--green-ink);
+  color: var(--green-ink);
 }
 
 .btn:disabled {
@@ -263,7 +267,7 @@ button {
   border: 0;
   border-radius: 6px;
   background: none;
-  font-size: var(--t-ui);
+  font-size: var(--t-small);
   font-weight: 500;
   color: var(--ink-2);
   transition: background-color 120ms, color 120ms;
@@ -285,10 +289,10 @@ button {
 .banner {
   padding: 10px var(--s2);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--green-ink);
   border-radius: var(--r-control);
   background: var(--surface);
-  font-size: var(--t-ui);
+  font-size: var(--t-small);
 }
 
 .board {
@@ -326,13 +330,14 @@ button {
 }
 
 .section-head h2 {
-  font: 600 var(--t-h2) / 1.2 var(--display);
+  color: var(--green-ink);
+  font: 600 var(--t-heading) / 1.2 var(--display);
   font-variation-settings: 'opsz' 36;
   letter-spacing: -0.005em;
 }
 
 .section-meta {
-  font-size: var(--t-sm);
+  font-size: var(--t-small);
   color: var(--ink-2);
 }
 
@@ -362,12 +367,13 @@ button {
 }
 
 .figure__context {
-  font-size: var(--t-sm);
+  font-size: var(--t-small);
   color: var(--ink-2);
 }
 
 .figure__value {
-  font: 600 var(--t-figure) / 1 var(--display);
+  color: var(--green-ink);
+  font: 600 var(--t-display) / 1 var(--display);
   font-variation-settings: 'opsz' 96;
   letter-spacing: -0.01em;
 }
@@ -400,23 +406,23 @@ button {
 }
 
 .day__wd {
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--ink-label);
 }
 
 .day__num {
-  font: 600 var(--t-lg) / 1.2 var(--display);
+  font: 600 var(--t-day) / 1.2 var(--display);
 }
 
 /* bookings that day; the line is kept even when empty so tabs don't change height */
 .day__n {
   min-height: 13px;
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   font-weight: 600;
-  color: var(--accent);
+  color: var(--green-ink);
 }
 
 .day--active {
@@ -486,7 +492,7 @@ button {
   place-items: center;
   margin: 0;
   background: none;
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   color: var(--ink-2);
 }
 
@@ -499,8 +505,9 @@ button {
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  font-size: var(--t-xs);
-  color: var(--ink-2);
+  white-space: nowrap;
+  font-size: var(--t-label);
+  color: var(--ink-label);
 }
 
 .gridline {
@@ -539,7 +546,7 @@ button {
   border-radius: 50%;
   background: var(--sunken);
   color: var(--ink-2);
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   font-weight: 600;
   letter-spacing: 0.04em;
 }
@@ -556,7 +563,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--t-sm);
+  font-size: var(--t-small);
   line-height: 1.4;
   color: var(--ink-2);
 }
@@ -567,7 +574,7 @@ button {
   display: flex;
   align-items: center;
   padding-left: var(--s1);
-  font-size: var(--t-sm);
+  font-size: var(--t-small);
   color: var(--ink-2);
 }
 
@@ -586,7 +593,7 @@ button {
   bottom: 2px;
   margin-left: 1px;
   max-width: calc(100% - 2px); /* 2px gap between neighbouring half-hour blocks */
-  border: 1.5px solid var(--accent-line);
+  border: 1.5px solid var(--green-line);
   border-radius: var(--r-pill);
   background: var(--surface);
   transition: background-color 120ms, border-color 120ms;
@@ -594,8 +601,8 @@ button {
 
 .slot:hover {
   z-index: 2;
-  border-color: var(--accent);
-  background: var(--accent-wash);
+  border-color: var(--green-ink);
+  background: var(--green-wash);
 }
 
 /* hover details: time and status above the slot */
@@ -609,7 +616,7 @@ button {
   border-radius: 6px;
   background: var(--ink);
   color: var(--page);
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   font-weight: 500;
   white-space: nowrap;
   opacity: 0;
@@ -628,15 +635,24 @@ button {
 }
 
 .slot__time {
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
-  color: var(--accent);
+  color: var(--green-ink);
 }
 
 .slot--booked .slot__time {
   color: var(--on-accent);
+}
+
+/* a full day's free chips are too small for a time: they show it on hover; a short window (today) has room */
+.slot:not(.slot--booked) .slot__time {
+  display: none;
+}
+
+.timeline--roomy .slot .slot__time {
+  display: inline;
 }
 
 /* a full clinic day on a lane narrower than this leaves chips too small for "10:30 AM" */
@@ -692,7 +708,7 @@ button {
   border-radius: 4px;
   background: var(--accent);
   color: var(--on-accent);
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   font-weight: 600;
   line-height: 16px;
 }
@@ -702,7 +718,7 @@ button {
   display: flex;
   gap: var(--s2);
   margin-right: auto;
-  font-size: var(--t-sm);
+  font-size: var(--t-small);
   color: var(--ink-2);
 }
 
@@ -752,7 +768,7 @@ button {
   width: 2px;
   height: 10px;
   border-radius: 1px;
-  background: var(--accent);
+  background: var(--green-ink);
   animation: glide 4s ease-in-out infinite alternate;
 }
 
@@ -788,7 +804,7 @@ button {
 }
 
 .bubble__time {
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   color: var(--ink-2);
 }
 
@@ -808,7 +824,7 @@ button {
 }
 
 .bubble--assistant .bubble__text {
-  background: var(--accent-wash);
+  background: var(--green-wash);
   border-bottom-right-radius: 4px;
 }
 
@@ -819,10 +835,11 @@ button {
 /* ---------- read-back: digits arrive one by one, then a check mark ---------- */
 
 .readback {
+  color: var(--green-ink);
   display: inline-flex;
   align-items: center;
   gap: var(--s0);
-  font: 650 var(--t-number) / 1 var(--display);
+  font: 650 var(--t-heading) / 1 var(--display);
   font-variation-settings: 'opsz' 72;
   letter-spacing: 0.01em;
 }
@@ -841,7 +858,7 @@ button {
 }
 
 .readback__check {
-  color: var(--accent);
+  color: var(--green-ink);
 }
 
 .readback__check path {
@@ -878,12 +895,12 @@ th {
   padding: 0 var(--s2) 10px 0;
   border-bottom: 1px solid var(--line);
   text-align: left;
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: var(--ink-2);
+  color: var(--ink-label);
 }
 
 td {
@@ -903,7 +920,7 @@ td:first-child {
 .cell-sub {
   display: block;
   white-space: normal;
-  font-size: var(--t-sm);
+  font-size: var(--t-small);
   color: var(--ink-2);
 }
 
@@ -912,13 +929,13 @@ td:first-child {
   display: inline-block;
   padding: 2px 10px;
   border-radius: var(--r-pill);
-  font-size: var(--t-sm);
+  font-size: var(--t-small);
   font-weight: 500;
 }
 
 .status--booked {
-  background: var(--accent-wash);
-  color: var(--accent);
+  background: var(--green-wash);
+  color: var(--green-ink);
 }
 
 .status--cancelled {
@@ -946,7 +963,7 @@ td:first-child {
 @keyframes flash {
   0%,
   35% {
-    background-color: var(--accent-wash);
+    background-color: var(--green-wash);
   }
   100% {
     background-color: transparent;
@@ -979,7 +996,7 @@ tr.flash td {
 @keyframes ring-out {
   0%,
   40% {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--green-ink);
     outline-offset: 2px;
   }
   100% {
@@ -1071,7 +1088,7 @@ tr.flash td {
   display: inline-flex;
   align-items: center;
   gap: var(--s0);
-  font-size: var(--t-ui);
+  font-size: var(--t-small);
   color: var(--ink-2);
 }
 
@@ -1083,7 +1100,7 @@ tr.flash td {
 }
 
 .state--connecting .state__dot {
-  background: var(--accent);
+  background: var(--green-ink);
   animation: blink 1s steps(2, start) infinite;
 }
 
@@ -1092,7 +1109,7 @@ tr.flash td {
 }
 
 .state--connected .state__dot {
-  background: var(--accent);
+  background: var(--green-ink);
 }
 
 
@@ -1141,7 +1158,7 @@ tr.flash td {
 
 .hero__org {
   display: block;
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1150,7 +1167,7 @@ tr.flash td {
 
 .hero__name {
   margin-top: 2px;
-  font: 700 var(--t-number) / 1.1 var(--display);
+  font: 700 var(--t-heading) / 1.1 var(--display);
   font-variation-settings: 'opsz' 72;
 }
 
@@ -1196,7 +1213,7 @@ tr.flash td {
   align-items: center;
   justify-content: space-between;
   gap: var(--s1);
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   color: var(--hero-ink-2);
 }
 
@@ -1262,7 +1279,7 @@ tr.flash td {
   gap: var(--s2);
   padding-bottom: var(--s1);
   border-bottom: 1px solid var(--line);
-  font-size: var(--t-xs);
+  font-size: var(--t-label);
   color: var(--ink-2);
 }
 
@@ -1310,7 +1327,7 @@ tr.flash td {
 }
 
 .phone__card-when {
-  font-size: var(--t-ui);
+  font-size: var(--t-small);
   color: var(--ink-2);
 }
 
@@ -1388,9 +1405,8 @@ tr.flash td {
 
 @media (max-width: 560px) {
   :root {
-    --t-figure: 36px;
-    --t-number: 24px;
-    --t-wordmark: 19px;
+    --t-display: 40px;
+    --t-heading: 20px;
   }
 
   .topbar {
