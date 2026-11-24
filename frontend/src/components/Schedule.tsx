@@ -11,6 +11,7 @@ type Props = {
 }
 
 const SLOT_MIN = 30
+const MIN_FREE_TODAY = 4 // fewer than this left today: open on the next day with free slots
 
 /** "Dr. Ananya Sharma" -> "AS" */
 const initials = (name: string) =>
@@ -21,30 +22,32 @@ const initials = (name: string) =>
     .slice(0, 2)
     .join('')
 
-/** "17:30" -> "5:30" (the axis already says am/pm) */
-const shortTime = (hhmm: string) => formatTime(hhmm).replace(/\s?[AP]M$/, '')
+const hourLabel = (h: number) => `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`
 
 export function Schedule({ doctors, day, onDay, flashing }: Props) {
   const days = [...new Set(doctors.flatMap((d) => d.slots.map((s) => s.date)))].sort()
-  // Until the user picks a day: today, unless fewer than 3 slots are left, then the next day with free slots.
   const freeOn = (d: string) =>
     doctors.reduce((n, doc) => n + doc.slots.filter((s) => s.date === d && !s.is_booked).length, 0)
-  const opening = freeOn(today()) >= 3 ? today() : (days.find((d) => d > today() && freeOn(d) > 0) ?? days[0])
+  // Until the user picks a day: today, unless it is nearly done, then the next day with free slots.
+  const opening =
+    freeOn(today()) >= MIN_FREE_TODAY ? today() : (days.find((d) => d > today() && freeOn(d) > 0) ?? days[0])
   const active = day && days.includes(day) ? day : opening
 
-  // One fixed axis for every day (opening to closing across the whole week), so a slot always has
-  // its real width and late in the day the lanes don't stretch two slots across the screen.
+  // Clinic hours across the week, so every day shares one axis.
   const allTimes = doctors.flatMap((d) => d.slots.map((s) => minutes(s.time)))
-  const startMin = Math.floor(Math.min(...allTimes) / 60) * 60
-  const endMin = Math.ceil((Math.max(...allTimes) + SLOT_MIN) / 60) * 60
-  const span = endMin - startMin
-  const hours = Array.from({ length: span / 60 + 1 }, (_, i) => startMin / 60 + i)
-  const pos = (hhmm: string) => ((minutes(hhmm) - startMin) / span) * 100
+  const dayStart = Math.floor(Math.min(...allTimes) / 60) * 60
+  const dayEnd = Math.ceil((Math.max(...allTimes) + SLOT_MIN) / 60) * 60
 
-  // Today: hours already gone are shaded, and a "now" marker sits at the edge; moves every 30 s.
+  // Today: the hours already gone collapse into a narrow "Earlier" strip, so the open hours get the width.
   const clock = new Date(useNow(30_000)).toTimeString().slice(0, 5)
+  const nowMin = minutes(clock)
   const isToday = active === today()
-  const pastPct = isToday ? Math.min(100, Math.max(0, pos(clock))) : 0
+  const start = isToday ? Math.min(Math.max(dayStart, Math.floor(nowMin / 60) * 60), dayEnd - 60) : dayStart
+  const collapsed = start > dayStart
+  const span = dayEnd - start
+  const hours = Array.from({ length: span / 60 + 1 }, (_, i) => start / 60 + i)
+  const pos = (m: number) => ((m - start) / span) * 100
+  const pastPct = isToday ? Math.min(100, Math.max(0, pos(nowMin))) : 0
   const nowAt = isToday && pastPct > 0 && pastPct < 100 ? `${pastPct}%` : null
 
   return (
@@ -88,21 +91,24 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
       {allTimes.length === 0 ? (
         <Empty>No open slots.</Empty>
       ) : (
-        <div className="timeline">
+        // keyed by day: switching days fades the lanes in
+        <div className="timeline" key={active}>
           <div className="timeline__axis" aria-hidden="true">
             <span className="label">Doctor</span>
-            <div className="timeline__track">
-              {hours.map((h) => (
-                <span key={h} className="tick-label num" style={{ left: `${((h * 60 - startMin) / span) * 100}%` }}>
-                  {h > 12 ? h - 12 : h}
-                  {h >= 12 ? 'p' : 'a'}
-                </span>
-              ))}
-              {nowAt && (
-                <span className="now-label num" style={{ left: nowAt }}>
-                  {clock}
-                </span>
-              )}
+            <div className={`lane${collapsed ? ' lane--collapsed' : ''}`}>
+              {collapsed && <span className="earlier earlier--label">Earlier</span>}
+              <div className="timeline__track">
+                {hours.map((h) => (
+                  <span key={h} className="tick-label num" style={{ left: `${pos(h * 60)}%` }}>
+                    {hourLabel(h)}
+                  </span>
+                ))}
+                {nowAt && (
+                  <span className="now-label num" style={{ left: nowAt }}>
+                    {clock}
+                  </span>
+                )}
+              </div>
             </div>
             <span className="label lane-free">Free</span>
           </div>
@@ -121,26 +127,29 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
                     <span className="row__spec">{doc.specialty}</span>
                   </span>
                 </div>
-                <div className="timeline__track">
-                  {pastPct > 0 && <span className="past" style={{ width: `${pastPct}%` }} />}
-                  {hours.map((h) => (
-                    <span key={h} className="gridline" style={{ left: `${((h * 60 - startMin) / span) * 100}%` }} />
-                  ))}
-                  {nowAt && <span className="now" style={{ left: nowAt }} />}
-                  {slots.map((s) => {
-                    const key = slotKey(doc.id, s.date, s.time)
-                    return (
-                      <span
-                        key={key}
-                        className={`slot${s.is_booked ? ' slot--booked' : ''}${flashing.has(key) ? ' flash' : ''}`}
-                        style={{ left: `${pos(s.time)}%`, width: `${(SLOT_MIN / span) * 100}%` }}
-                        data-tip={`${formatTime(s.time)} · ${s.is_booked ? 'Booked' : 'Free'}`}
-                        aria-label={`${doc.name} ${formatTime(s.time)} ${s.is_booked ? 'booked' : 'free'}`}
-                      >
-                        {s.is_booked && <span className="slot__time num">{shortTime(s.time)}</span>}
-                      </span>
-                    )
-                  })}
+                <div className={`lane${collapsed ? ' lane--collapsed' : ''}`}>
+                  {collapsed && <span className="earlier" aria-hidden="true" />}
+                  <div className="timeline__track">
+                    {pastPct > 0 && <span className="past" style={{ width: `${pastPct}%` }} />}
+                    {hours.map((h) => (
+                      <span key={h} className="gridline" style={{ left: `${pos(h * 60)}%` }} />
+                    ))}
+                    {nowAt && <span className="now" style={{ left: nowAt }} />}
+                    {slots.map((s) => {
+                      const key = slotKey(doc.id, s.date, s.time)
+                      return (
+                        <span
+                          key={key}
+                          className={`slot${s.is_booked ? ' slot--booked' : ''}${flashing.has(key) ? ' flash' : ''}`}
+                          style={{ left: `${pos(minutes(s.time))}%`, width: `${(SLOT_MIN / span) * 100}%` }}
+                          data-tip={`${formatTime(s.time)} · ${s.is_booked ? 'Booked' : 'Free'}`}
+                          aria-label={`${doc.name} ${formatTime(s.time)} ${s.is_booked ? 'booked' : 'free'}`}
+                        >
+                          <span className="slot__time num">{formatTime(s.time)}</span>
+                        </span>
+                      )
+                    })}
+                  </div>
                 </div>
                 <span className="row__count num" title="Free slots">
                   {free}

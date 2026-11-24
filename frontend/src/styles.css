@@ -449,7 +449,41 @@ button {
 
 .timeline__track {
   position: relative;
-  height: 22px;
+  height: 30px;
+  container: track / inline-size; /* chip labels hide when the lane is too narrow for them */
+}
+
+/* lane = optional "Earlier" strip + the track */
+.lane {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.lane--collapsed {
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: var(--s0);
+}
+
+/* today: the hours already gone, collapsed to a narrow hatched strip */
+.earlier {
+  align-self: stretch;
+  margin: -5px 0;
+  border-radius: 4px;
+  background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 7px);
+}
+
+.earlier--label {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  background: none;
+  font-size: var(--t-xs);
+  color: var(--ink-2);
+}
+
+/* switching days: the lanes fade in */
+.timeline {
+  animation: fade 200ms ease-out;
 }
 
 .tick-label {
@@ -539,11 +573,11 @@ button {
   position: absolute;
   display: grid;
   place-items: center;
-  top: 3px;
-  bottom: 3px;
+  top: 2px;
+  bottom: 2px;
   margin-left: 1px;
   max-width: calc(100% - 2px); /* 2px gap between neighbouring half-hour blocks */
-  border: 1px solid var(--accent-line);
+  border: 1.5px solid var(--accent-line);
   border-radius: var(--r-pill);
   background: var(--surface);
   transition: background-color 120ms, border-color 120ms;
@@ -588,7 +622,19 @@ button {
   font-size: var(--t-xs);
   font-weight: 600;
   line-height: 1;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+.slot--booked .slot__time {
   color: var(--on-accent);
+}
+
+/* a full clinic day on a lane narrower than this leaves chips too small for "10:30 AM" */
+@container track (max-width: 900px) {
+  .slot__time {
+    display: none;
+  }
 }
 
 /* today's hours already gone: a flat tint under the lane */
