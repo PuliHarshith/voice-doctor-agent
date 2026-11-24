@@ -18,9 +18,17 @@ You talk to Ava, a receptionist, from your browser. She can check a doctor's fre
 
 How the parts fit together is in [PIPELINE.md](PIPELINE.md).
 
-## Screenshot
+## Screenshots
 
 ![The dashboard: today's figures, the week's bookings, each doctor's day, and the appointment list](docs/dashboard.png)
+
+**Try Call** opens the call screen beside the dashboard. Here it is ringing; once connected it shows the timer, the voice ribbon, the live transcript and a confirmation card after a booking.
+
+![The call screen while ringing, docked beside the dashboard](docs/call-screen.png)
+
+| Ink theme | Phone |
+|---|---|
+| ![The dashboard in the dark Ink theme](docs/dashboard-ink.png) | <img src="docs/mobile.png" alt="The dashboard at phone width" width="260"> |
 
 ## Run it
 

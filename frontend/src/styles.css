@@ -599,10 +599,17 @@ button {
 }
 
 .figure__value {
+  white-space: nowrap;
   color: var(--green-ink);
   font: 600 var(--t-display) / 1 var(--display);
   font-variation-settings: 'opsz' 96;
   letter-spacing: -0.01em;
+}
+
+.figure__unit {
+  margin-left: 0.2em;
+  font-size: 0.4em;
+  letter-spacing: 0.02em;
 }
 
 /* ---------- doctors: day lanes ---------- */

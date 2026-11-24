@@ -31,7 +31,11 @@ export function Figures({ doctors, appointments }: { doctors: Doctor[]; appointm
       {figures.map(([label, value, context]) => (
         <div key={label} className="figure">
           <span className="label">{label}</span>
-          <span className="figure__value num">{value}</span>
+          <span className="figure__value num">
+            {String(value).split(' ')[0]}
+            {/* "9:00 AM": the AM/PM is set small so the time stays on one line beside the call sheet */}
+            {String(value).includes(' ') && <small className="figure__unit">{String(value).split(' ')[1]}</small>}
+          </span>
           <span className="figure__context num">{context}</span>
         </div>
       ))}
