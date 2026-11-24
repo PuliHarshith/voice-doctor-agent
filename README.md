@@ -1,5 +1,11 @@
 # Sunrise Clinic: voice appointment assistant
 
+[![CI](https://github.com/PuliHarshith/voice-doctor-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/PuliHarshith/voice-doctor-agent/actions/workflows/ci.yml)
+
+A voice receptionist you talk to in the browser: it checks doctors' free slots, books and cancels appointments, and a live dashboard shows every step.
+
+Demo video: (link)
+
 You talk to Ava, a receptionist, from your browser. She can check a doctor's free slots, book an appointment and cancel one. She knows who you are only from the phone number you say. She reads it back digit by digit, and nothing is booked or cancelled until you say yes.
 
 - **Voice pipeline:** Pipecat 1.17 (Python), in `backend/`
@@ -12,20 +18,39 @@ You talk to Ava, a receptionist, from your browser. She can check a doctor's fre
 
 How the parts fit together is in [PIPELINE.md](PIPELINE.md).
 
+## Screenshot
+
+![The dashboard: today's figures, the week's bookings, each doctor's day, and the appointment list](docs/dashboard.png)
+
 ## Run it
 
 You need Python 3.11, Node 20 or newer, an ElevenLabs API key and a Google AI Studio API key. Both keys have free plans.
 
 ### 1. Backend (port 7860)
 
-```bash
+Windows (PowerShell):
+
+```powershell
 cd backend
-python -m venv .venv
-.venv\Scripts\activate            # macOS/Linux: source .venv/bin/activate
+py -3.11 -m venv .venv
+.venv\Scripts\Activate.ps1        # if scripts are blocked: Set-ExecutionPolicy -Scope Process Bypass
 pip install -r requirements.txt
-cp .env.example .env              # Windows cmd: copy .env.example .env; then put your two keys in .env
+copy .env.example .env            # then put your two keys in .env
 python bot.py
 ```
+
+macOS / Linux:
+
+```bash
+cd backend
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env              # then put your two keys in .env
+python bot.py
+```
+
+The server is ready when it prints a line with `http://localhost:7860`. It makes no API calls until you start a call.
 
 The first start creates `clinic.db` with six doctors, a week of slots and a realistic spread of demo bookings. To reset the demo data at any time, run `python seed.py` (the same week every time; the demo caller's number, 98765 43210, is never pre-booked).
 
@@ -61,7 +86,7 @@ These cover parsing of spoken phone numbers, the read-back check and the four to
 
 Only the two keys are required. Everything else in [`backend/.env.example`](backend/.env.example) is optional and documented line by line: model, voice, and how long a pause ends your turn. **`.env` is git-ignored. Never commit it.**
 
-## Known limits
+## Known limitations
 
 - **Response time:** Ava starts answering 1.8–2.9 s after you stop talking, or 3–5 s when she has to look something up. Most of that is Gemini, which varies from 0.6 to 2.5 s per reply.
 - **Voice:** the free ElevenLabs plan only allows its built-in voices, so the voice can't be changed to one from the Voice Library.

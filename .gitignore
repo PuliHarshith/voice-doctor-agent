@@ -3,3 +3,10 @@
 *.db
 node_modules/
 __pycache__/
+.env.*
+!.env.example
+*.pyc
+.pytest_cache/
+*.log
+.DS_Store
+dist/
