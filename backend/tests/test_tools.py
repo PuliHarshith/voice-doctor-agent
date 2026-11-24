@@ -94,7 +94,7 @@ def test_is_yes(text, expected):
 def test_availability_by_specialty_and_date(tools):
     result = call(tools.check, doctor="cardiologist", date=TOMORROW)["availability"]
     assert len(result) == 1 and result[0]["doctor"] == "Dr. Rohan Mehta"
-    assert result[0]["available_times"][0] == "9:00 AM"
+    assert result[0]["available_times"][0] == "9 AM"
 
 
 def test_availability_bad_inputs(tools):
@@ -129,7 +129,7 @@ def test_cancel_single_and_frees_slot(tools):
     call(tools.book, doctor="Iyer", date=TOMORROW, time="2:00 PM")
     r = call(tools.cancel)
     assert r["cancelled"] and r["doctor"] == "Dr. Priya Iyer"
-    assert "2:00 PM" in call(tools.check, doctor="Iyer", date=TOMORROW)["availability"][0]["available_times"]
+    assert "2 PM" in call(tools.check, doctor="Iyer", date=TOMORROW)["availability"][0]["available_times"]
     assert "No upcoming" in call(tools.cancel)["error"]
 
 

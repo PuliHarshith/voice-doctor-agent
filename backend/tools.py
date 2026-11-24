@@ -104,7 +104,8 @@ def parse_time(value: str) -> str | None:
 
 
 def speak_time(hhmm: str) -> str:
-    return datetime.strptime(hhmm, "%H:%M").strftime("%I:%M %p").lstrip("0")
+    """'14:30' -> '2:30 PM', '09:00' -> '9 AM' (TTS read "9:00" as "nine zero zero")."""
+    return datetime.strptime(hhmm, "%H:%M").strftime("%I %p" if hhmm.endswith(":00") else "%I:%M %p").lstrip("0")
 
 
 def day_name(iso: str) -> str:
@@ -145,6 +146,9 @@ def make_tools(session: Session) -> list:
         session.phone = None
         phone = normalise(phone_number)
         bot_text, user_text = last_readback_and_reply(params.context.get_messages())
+        # Context holds only what was spoken before any interruption, so a caller who talks over the
+        # read-back shows up here as a cut-off number (and is rightly refused).
+        logger.debug(f"confirm sees agent={bot_text!r} caller={user_text!r}")
         if phone is None:
             result = {"error": f"'{phone_number}' is not a valid 10-digit phone number. Ask the caller again."}
         elif not read_back(bot_text, phone):
