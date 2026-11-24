@@ -1,22 +1,20 @@
-# Sunrise Clinic: voice appointment assistant
+# Voice AI Doctor Appointment Assistant
 
 [![CI](https://github.com/PuliHarshith/voice-doctor-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/PuliHarshith/voice-doctor-agent/actions/workflows/ci.yml)
 
-A voice receptionist you talk to in the browser: it checks doctors' free slots, books and cancels appointments, and a live dashboard shows every step.
+A voice-based doctor appointment booking system. You talk to an AI receptionist in the browser: it checks a doctor's availability, books an appointment and cancels one. It knows you only by the phone number you say, and reads it back before booking or cancelling. A dashboard shows the call, the live transcript, the doctors and their slots, and the appointments.
 
 <!-- TODO before submitting: add the demo video link here -->
 
-Live dashboard (read-only, sample data): https://puliharshith.github.io/voice-doctor-agent/. Voice calls need the backend running on your machine (below), so Try Call is off there.
-
-You talk to Ava, a receptionist, from your browser. She can check a doctor's free slots, book an appointment and cancel one. She knows who you are only from the phone number you say. She reads it back digit by digit, and nothing is booked or cancelled until you say yes.
+Live dashboard (read-only, sample data): https://puliharshith.github.io/voice-doctor-agent/. Voice calls need the backend running on your machine (below).
 
 - **Voice pipeline:** Pipecat 1.17.0 (Python), in `backend/`
-- **Speech to text:** ElevenLabs Scribe v2 Realtime (streaming, English)
-- **Text to speech:** ElevenLabs Flash v2.5, voice "Sarah"
-- **LLM:** Google Gemini, `gemini-3.5-flash-lite` (free tier from Google AI Studio)
-- **Turn detection:** Silero VAD plus Pipecat's Smart Turn v3 model, both running locally
-- **Data:** SQLite with six mock doctors, a week of slots and a demo week of bookings, seeded automatically
-- **Dashboard:** React 19, Vite and TypeScript, in `frontend/`. Top to bottom: a top bar (clock, Live marker, call status, Paper / Ink switch, Try Call); four figures (booked today, free slots today, cancelled this week, next appointment); two charts (This week, Doctor load); the Doctors timeline for one day; then Transcript beside Appointments, which has a patient search
+- **Speech to text:** ElevenLabs Scribe v2 Realtime
+- **Text to speech:** ElevenLabs Flash v2.5
+- **LLM:** Google Gemini, `gemini-3.5-flash-lite` (free tier)
+- **Voice activity detection:** Silero VAD, plus Smart Turn v3 for end of turn
+- **Data:** SQLite with six mock doctors and a week of slots, seeded automatically
+- **Dashboard:** React, Vite and TypeScript, in `frontend/`
 
 How the parts fit together is in [PIPELINE.md](PIPELINE.md).
 
