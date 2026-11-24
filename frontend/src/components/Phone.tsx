@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { useCall } from '../useCall'
 import { Timer } from './CallConsole'
-import { formatClock, formatPhone } from '../format'
+import { formatClock, formatDate, formatPhone, formatTime } from '../format'
+import type { Appointment } from '../api'
+import { hangUpTone, ring } from '../tones'
 import type { Line } from './Transcript'
 
 type Call = ReturnType<typeof useCall>
@@ -12,7 +14,9 @@ const FADE_MS = 200 // matches .phone-layer transition
 const ACTIVITY = { listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking' } as const
 
 /** Phone-style call screen over the dashboard: ringing -> connected -> ended. */
-export function Phone({ call, lines, phone }: { call: Call; lines: Line[]; phone: string | null }) {
+type Props = { call: Call; lines: Line[]; phone: string | null; appt: Appointment | null }
+
+export function Phone({ call, lines, phone, appt }: Props) {
   const { state, error, muted, activity, connectedAt, endedAt, end, toggleMute, dismiss, bindCallerMeter, bindBotMeter } = call
   const [closing, setClosing] = useState(false)
   const box = useRef<HTMLOListElement>(null)
@@ -38,6 +42,11 @@ export function Phone({ call, lines, phone }: { call: Call; lines: Line[]; phone
     if (state === 'connecting') endBtn.current?.focus()
   }, [state])
 
+  useEffect(() => (state === 'connecting' ? ring() : undefined), [state]) // cleanup stops the ring
+  useEffect(() => {
+    if (state === 'ended' && !error) hangUpTone()
+  }, [state, error])
+
   useEffect(() => {
     const el = box.current
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
@@ -48,7 +57,7 @@ export function Phone({ call, lines, phone }: { call: Call; lines: Line[]; phone
 
   return (
     <div className={`phone-layer${closing ? ' phone-layer--closing' : ''}`}>
-      <section className={`phone phone--${state}`} role="dialog" aria-modal="true" aria-label="Call with Ava">
+      <section className={`phone phone--${state}`} role="dialog" aria-label="Call with Ava">
         <header className="phone__head">
           {/* Line is always there so nothing shifts when the number arrives. */}
           <p className="phone__caller num" aria-label="Caller's confirmed number">
@@ -88,17 +97,34 @@ export function Phone({ call, lines, phone }: { call: Call; lines: Line[]; phone
             <p className="phone__note">Microphone blocked. Allow it for this site and try again.</p>
           ) : error === 'unreachable' ? (
             <p className="phone__note">Couldn't connect. Is the backend running?</p>
-          ) : lines.length === 0 ? (
-            <p className="phone__note">{state === 'connecting' ? 'Connecting to the front desk…' : 'Say hello.'}</p>
           ) : (
-            <ol className="phone__lines" ref={box} aria-live="polite">
-              {lines.map((l) => (
-                <li key={l.id} className={`pl pl--${l.role}${l.final ? '' : ' pl--partial'}`}>
-                  <span className="pl__who">{l.role === 'user' ? 'You' : 'Ava'}</span>
-                  <p className="pl__text">{l.text}</p>
-                </li>
-              ))}
-            </ol>
+            <>
+              {appt && (
+                <div
+                  key={`${appt.id}-${appt.status}`}
+                  className={`phone__card phone__card--${appt.status}`}
+                  role="status"
+                >
+                  <span className="phone__card-label">{appt.status === 'booked' ? 'Booked' : 'Cancelled'}</span>
+                  <p className="phone__card-doc">{appt.doctor}</p>
+                  <p className="phone__card-when num">
+                    {formatDate(appt.date)} · {formatTime(appt.time)}
+                  </p>
+                </div>
+              )}
+              {lines.length === 0 ? (
+                <p className="phone__note">{state === 'connecting' ? 'Connecting to the front desk…' : 'Say hello.'}</p>
+              ) : (
+                <ol className="phone__lines" ref={box} aria-live="polite">
+                  {lines.map((l) => (
+                    <li key={l.id} className={`pl pl--${l.role}${l.final ? '' : ' pl--partial'}`}>
+                      <span className="pl__who">{l.role === 'user' ? 'You' : 'Ava'}</span>
+                      <p className="pl__text">{l.text}</p>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </>
           )}
         </div>
 
@@ -135,7 +161,13 @@ function Meter({ label, bind, off }: { label: string; bind: Call['bindCallerMete
     <div className={`meter${off ? ' meter--off' : ''}`} ref={bind}>
       <span className="meter__label">{label}</span>
       <span className="meter__bars">
-        <i /><i /><i /><i /><i /><i /><i />
+        <i />
+        <i />
+        <i />
+        <i />
+        <i />
+        <i />
+        <i />
       </span>
     </div>
   )

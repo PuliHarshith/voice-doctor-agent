@@ -4,6 +4,7 @@ import { useCall } from './useCall'
 import { useEvents } from './useEvents'
 import { CallConsole } from './components/CallConsole'
 import { Phone } from './components/Phone'
+import { unlockTones } from './tones'
 import { Transcript, type Line } from './components/Transcript'
 import { Schedule } from './components/Schedule'
 import { Ledger } from './components/Ledger'
@@ -35,6 +36,7 @@ export default function App() {
   const [loadFailed, setLoadFailed] = useState(false)
   const [lines, setLines] = useState<Line[]>([])
   const [phone, setPhone] = useState<string | null>(null) // caller's number once they confirm the read-back
+  const [callAppt, setCallAppt] = useState<Appointment | null>(null) // booked/cancelled during this call
   const [day, setDay] = useState<string | null>(null)
   const [flashing, setFlashing] = useState<Set<string>>(() => new Set())
   const lineId = useRef(0)
@@ -74,6 +76,7 @@ export default function App() {
       } else if (e.type === 'appointment_booked' || e.type === 'appointment_cancelled') {
         const a = e.appointment
         const booked = e.type === 'appointment_booked'
+        setCallAppt(a)
         setAppointments((as) => {
           const rest = (as ?? []).filter((x) => x.id !== a.id)
           // new bookings go to the top (newest first); a cancellation keeps its row in place
@@ -97,6 +100,8 @@ export default function App() {
   const startCall = () => {
     setLines([])
     setPhone(null)
+    setCallAppt(null)
+    unlockTones()
     call.start()
   }
 
@@ -148,7 +153,7 @@ export default function App() {
         </div>
       </main>
 
-      <Phone call={call} lines={lines} phone={phone} />
+      <Phone call={call} lines={lines} phone={phone} appt={callAppt} />
     </div>
   )
 }

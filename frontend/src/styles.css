@@ -638,6 +638,18 @@ tr.flash td {
   opacity: 0;
 }
 
+/* Two-column dashboard: the phone takes over the call column only, so the slots and appointments
+   it changes stay in full view (and their flash visible) during the call. */
+@media (min-width: 961px) {
+  .phone-layer {
+    top: 65px; /* shortcut: measured .topbar height (incl. its border); update if the top bar changes */
+    right: auto;
+    width: 400px; /* = the call column (.layout) */
+    background: var(--paper);
+    border-right: 1px solid var(--line);
+  }
+}
+
 .phone {
   width: min(360px, 100%);
   height: min(720px, 100%);
@@ -724,12 +736,51 @@ tr.flash td {
 }
 
 .phone__body {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
 }
 
+/* Booked / cancelled during this call: one card above the transcript. */
+.phone__card {
+  margin: 14px 20px 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  animation: fade 180ms ease-out;
+}
+
+.phone__card-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.phone__card-doc {
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.phone__card-when {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.phone__card--cancelled {
+  border-color: var(--line);
+}
+
+.phone__card--cancelled .phone__card-label {
+  color: var(--ink-2);
+}
+
+.phone__card--cancelled .phone__card-when {
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-3);
+}
+
 .phone__note {
-  align-self: center;
+  margin: auto 0;
   padding: 0 32px;
   text-align: center;
   color: var(--ink-2);
@@ -742,6 +793,7 @@ tr.flash td {
   padding: 6px 20px 16px;
   overflow-y: auto;
   min-height: 0;
+  flex: 1;
 }
 
 .pl {
@@ -788,6 +840,14 @@ tr.flash td {
 @keyframes fade {
   from {
     opacity: 0;
+  }
+}
+
+/* Touch screens: every button at least 44px tall. */
+@media (pointer: coarse) {
+  .btn,
+  .day {
+    min-height: 44px;
   }
 }
 
