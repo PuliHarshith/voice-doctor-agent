@@ -33,7 +33,8 @@ export function ChatLines({ lines }: { lines: Line[] }) {
   // Follow the newest utterance, including in-place updates of a line still being spoken.
   useEffect(() => {
     const el = box.current
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: calm ? 'auto' : 'smooth' })
   }, [lines.length, last?.text])
 
   return (

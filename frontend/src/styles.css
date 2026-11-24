@@ -1157,19 +1157,21 @@ td:first-child {
 
 /* ---------- motion ---------- */
 
-/* Row that just changed: a brief wash of the accent, then back. */
-@keyframes flash {
-  0%,
-  35% {
-    background-color: var(--green-wash);
-  }
-  100% {
+/* Row that just changed: the wash comes in fast (150ms), stays while App keeps the class (2.4s),
+   and fades out (350ms) when it is removed. Every animation stays under 400ms. */
+@keyframes wash-in {
+  from {
     background-color: transparent;
   }
 }
 
+td {
+  transition: background-color 350ms ease-out;
+}
+
 tr.flash td {
-  animation: flash 2.4s ease-out;
+  background-color: var(--green-wash);
+  animation: wash-in 150ms ease-out;
 }
 
 /* A slot that was just booked is stamped onto the lane: drops in from larger, settles, no overshoot. */
@@ -1191,20 +1193,18 @@ tr.flash td {
 }
 
 /* A slot freed by a cancellation: a ring that fades. */
-@keyframes ring-out {
-  0%,
-  40% {
-    outline: 2px solid var(--green-ink);
-    outline-offset: 2px;
-  }
-  100% {
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-  }
+.slot {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
 }
 
 .slot.flash:not(.slot--booked) {
-  animation: ring-out 2.4s ease-out;
+  outline-color: var(--green-ink);
+  transition: outline-color 150ms ease-out;
+}
+
+.slot:not(.flash) {
+  transition: outline-color 350ms ease-out, background-color 120ms, border-color 120ms;
 }
 
 @keyframes blink {
@@ -1568,6 +1568,7 @@ tr.flash td {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

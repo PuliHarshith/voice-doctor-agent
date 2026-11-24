@@ -15,16 +15,27 @@ const POINTS = 48
 const GAIN = 3 // speech rarely passes 0.3 of full scale; this fills the ribbon without clipping often
 export const FLAT = `M0 ${RIBBON_H / 2} L${RIBBON_W} ${RIBBON_H / 2}`
 
+const reduceMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+const EASE = 0.35 // each frame moves this far toward the new shape: the ribbon flows instead of jittering
+const lastY = new WeakMap<SVGPathElement, number[]>()
+
 /** Draw a slice of the waveform as one smooth line. A sine envelope pins both ends to the middle, so
  * it reads as a ribbon rather than a raw oscilloscope; quadratic curves through midpoints smooth it. */
 function drawRibbon(path: SVGPathElement | null, buf: Float32Array | null) {
   if (!path) return
-  if (!buf) return path.setAttribute('d', FLAT)
+  if (!buf || reduceMotion()) {
+    lastY.delete(path)
+    return path.setAttribute('d', FLAT)
+  }
   const mid = RIBBON_H / 2
+  const prev = lastY.get(path)
   const pts = Array.from({ length: POINTS + 1 }, (_, i) => {
     const v = Math.max(-1, Math.min(1, buf[Math.floor((i * (buf.length - 1)) / POINTS)] * GAIN))
-    return [(i * RIBBON_W) / POINTS, mid + v * Math.sin((Math.PI * i) / POINTS) * (mid - 2)]
+    const target = mid + v * Math.sin((Math.PI * i) / POINTS) * (mid - 2)
+    const y = prev ? prev[i] + (target - prev[i]) * EASE : target
+    return [(i * RIBBON_W) / POINTS, y]
   })
+  lastY.set(path, pts.map(([, y]) => y))
   let d = `M${pts[0][0]} ${pts[0][1].toFixed(1)}`
   for (let i = 1; i < pts.length; i++) {
     const [x0, y0] = pts[i - 1]
