@@ -86,6 +86,12 @@ names, icons or assets. Information density that stays readable. All tokens are 
 - Signature moments: a "now" marker crossing today's lanes; a booked slot stamped onto its lane (scale in,
   no overshoot); the read-back typing the confirmed number digit by digit, then drawing a check mark; a
   hand-drawn voice ribbon (SVG path from the AnalyserNode waveform; caller in ink, Ava in teal).
+- Lanes: one fixed axis for every day (clinic opening to closing), so slots keep their real width; on
+  today, hours already gone are a flat `--sunken` tint with the "now" marker at its edge. Booked slots
+  show their time ("10:30") except on phones. Each doctor has an initials monogram (`--sunken` circle).
+- Figures carry one line of context each ("6 upcoming", "of 8 left today", "1 in all").
+- Theme control: a two-segment Paper | Ink switch; the active segment is ink on page.
+- Favicon: teal tile with a serif "S" (inline SVG in index.html).
 - Icons: only call, mute and end call; 1.5px stroke, drawn in `components/Icon.tsx`.
 - Banned: sidebars with menu groups, icon-in-circle tiles, charts, greetings, stock illustrations,
   gradients, emojis, marketing copy. Copy: Try Call, Transcript, Doctors, Appointments, End call,

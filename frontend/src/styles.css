@@ -244,8 +244,30 @@ button {
   cursor: default;
 }
 
-.theme-toggle {
-  min-width: 64px;
+/* Paper | Ink */
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface);
+}
+
+.segmented button {
+  min-height: 28px;
+  padding: 0 var(--s1);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  transition: background-color 120ms, color 120ms;
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--page);
 }
 
 /* ---------- board ---------- */
@@ -333,6 +355,11 @@ button {
 
 .figure + .figure {
   border-left: 1px solid var(--line);
+}
+
+.figure__context {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
 }
 
 .figure__value {
@@ -444,8 +471,30 @@ button {
 }
 
 .row__who {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.row__names {
   display: grid;
   min-width: 0;
+}
+
+/* doctor monogram: initials in a quiet circle */
+.mono {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sunken);
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .row__name {
@@ -484,6 +533,9 @@ button {
 /* free = outlined, booked = filled */
 .slot {
   position: absolute;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
   top: 3px;
   bottom: 3px;
   margin-left: 1px;
@@ -496,6 +548,33 @@ button {
 .slot--booked {
   border-color: var(--accent);
   background: var(--accent);
+}
+
+.slot__time {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--on-accent);
+}
+
+/* today's hours already gone: a flat tint under the lane */
+.past {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  left: 0;
+  background: var(--sunken);
+}
+
+.past-key {
+  display: inline-block;
+  width: 16px;
+  height: 10px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border-radius: 3px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
 }
 
 .slot.slot--key {
@@ -1098,10 +1177,7 @@ tr.flash td {
     gap: 10px;
   }
 
-  .row__who {
-    display: grid;
-    gap: 0;
-  }
+
 
   .days {
     overflow-x: auto;
@@ -1136,8 +1212,12 @@ tr.flash td {
     white-space: nowrap;
   }
 
-  .theme-toggle {
-    min-width: 0;
+  .slot__time {
+    display: none; /* slots are too narrow on a phone */
+  }
+
+  .segmented button {
+    padding: 0 var(--s0);
   }
 
   .empty {

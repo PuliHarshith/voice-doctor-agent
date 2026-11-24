@@ -33,7 +33,7 @@ function useTheme() {
       // not saved: the choice lasts for this visit only
     }
   }, [theme])
-  return [theme, () => setTheme((t) => (t === 'paper' ? 'ink' : 'paper'))] as const
+  return [theme, setTheme] as const
 }
 
 /** A line still being spoken (final=false) is updated in place; anything else starts a new line. */
@@ -67,7 +67,7 @@ export default function App() {
   const lineId = useRef(0)
   const call = useCall()
   const { bindBotAudio } = call
-  const [theme, toggleTheme] = useTheme()
+  const [theme, setTheme] = useTheme()
 
   const load = useCallback(async () => {
     try {
@@ -143,13 +143,13 @@ export default function App() {
           <span className="pill__dot" />
           {STATE_LABEL[call.state]}
         </span>
-        <button
-          className="btn btn--quiet theme-toggle"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'paper' ? 'Ink' : 'Paper'} theme`}
-        >
-          {theme === 'paper' ? 'Ink' : 'Paper'}
-        </button>
+        <div className="segmented" role="group" aria-label="Theme">
+          {(['paper', 'ink'] as const).map((t) => (
+            <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>
+              {t === 'paper' ? 'Paper' : 'Ink'}
+            </button>
+          ))}
+        </div>
         <button className="btn btn--start" onClick={startCall} disabled={call.state !== 'idle'}>
           <Icon name="call" />
           Try Call
