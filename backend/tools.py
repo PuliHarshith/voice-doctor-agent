@@ -6,7 +6,6 @@ tool only stores it if the agent's last message read the digits back and the cal
 
 import copy
 import functools
-import re
 from dataclasses import dataclass
 from datetime import date as Date, datetime
 
@@ -16,11 +15,15 @@ from pipecat.services.llm_service import FunctionCallParams
 
 import db
 from events import bus
-from phone import normalise
+from phone import TOKEN, normalise
 
 YES = {"yes", "yeah", "yep", "yup", "ya", "yah", "correct", "right", "exactly", "sure", "haan", "han",
-       "ha", "ok", "okay", "absolutely", "confirmed", "perfect", "affirmative"}
-NO = {"no", "nope", "nah", "not", "wrong", "incorrect", "wait"}
+       "ha", "ok", "okay", "absolutely", "confirmed", "perfect", "affirmative",
+       "हाँ", "हां", "जी", "सही", "ठीक", "बिल्कुल", "ji", "sahi", "theek", "bilkul",  # Hindi
+       "అవును", "ఔను", "సరే", "సరి", "కరెక్ట్", "avunu", "sare"}  # Telugu
+NO = {"no", "nope", "nah", "not", "wrong", "incorrect", "wait",
+      "नहीं", "नही", "ना", "गलत", "ग़लत", "रुको", "nahi", "nahin", "galat",  # Hindi
+      "కాదు", "లేదు", "వద్దు", "తప్పు", "ఆగండి", "kaadu", "ledu", "vaddu", "tappu"}  # Telugu
 MAX_TIMES = 8  # keep spoken lists short
 
 
@@ -57,7 +60,7 @@ def logged(tool):
 
 
 def is_yes(text: str) -> bool:
-    words = set(re.findall(r"[a-z]+", text.lower()))
+    words = set(TOKEN.findall(text.lower()))  # Indic-safe tokenizer shared with phone.py
     return bool(words & YES) and not words & NO
 
 

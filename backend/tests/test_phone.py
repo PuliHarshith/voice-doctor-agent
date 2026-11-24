@@ -89,3 +89,41 @@ def test_normalise_audit_cases(spoken, expected):
 def test_mentions_phone_number(bot_line, expected):
     from phone import mentions_phone_number
     assert mentions_phone_number(bot_line) is expected
+
+
+# --- Hindi and Telugu ---
+
+@pytest.mark.parametrize("spoken, expected", [
+    # Hindi, Devanagari words
+    ("नौ सात शून्य तीन शून्य छह पांच सात एक पांच", "9703065715"),
+    ("मेरा नंबर है नौ सात शून्य, तीन शून्य छह, पाँच सात एक पाँच", "9703065715"),
+    ("डबल नौ आठ सात छह पांच चार तीन दो एक", "9987654321"),
+    ("नौ ट्रिपल आठ सात छह पांच चार तीन दो", "9888765432"),
+    # Hindi, Latin transliteration
+    ("nau saat shunya teen shunya chhe paanch saat ek paanch", "9703065715"),
+    # Devanagari numerals, with +91
+    ("९७०३० ६५७१५", "9703065715"),
+    ("+९१ ९७०३०६५७१५", "9703065715"),
+    # Telugu, Telugu-script words
+    ("తొమ్మిది ఏడు సున్నా మూడు సున్నా ఆరు ఐదు ఏడు ఒకటి ఐదు", "9703065715"),
+    ("నా నంబర్ తొమ్మిది ఏడు సున్నా, మూడు సున్నా ఆరు, ఐదు ఏడు ఒకటి ఐదు", "9703065715"),
+    ("డబుల్ తొమ్మిది ఎనిమిది ఏడు ఆరు ఐదు నాలుగు మూడు రెండు ఒకటి", "9987654321"),
+    # Telugu, Latin transliteration
+    ("tommidi edu sunna moodu sunna aaru aidu edu okati aidu", "9703065715"),
+    # Telugu numerals
+    ("౯౭౦౩౦ ౬౫౭౧౫", "9703065715"),
+    # mixed: English digits inside Hindi / Telugu speech
+    ("मेरा नंबर 97030 65715 है", "9703065715"),
+    ("నా నంబర్ 97030 65715", "9703065715"),
+])
+def test_normalise_hindi_telugu(spoken, expected):
+    assert normalise(spoken) == expected
+
+
+@pytest.mark.parametrize("text", [
+    "Do you have time on Saturday? No problem.",  # English "do"/"no"/"sat" must not become digits
+    "मुझे एक अपॉइंटमेंट चाहिए",                      # only one digit word ("एक" = a/one)
+    "నాకు ఒక అపాయింట్‌మెంట్ కావాలి",                 # Telugu "ఒక" ("a") is not a digit
+])
+def test_ordinary_sentences_have_at_most_one_digit(text):
+    assert len(spoken_to_digits(text)) <= 1

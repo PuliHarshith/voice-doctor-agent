@@ -270,3 +270,30 @@ def test_new_call_starts_unconfirmed():
     first.phone = PHONE
     _, _, book, _ = make_tools(Session())
     assert "not confirmed" in call(book, doctor="Iyer", date=TOMORROW, time="2 PM")["error"]
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("हाँ, सही है", True), ("जी हां", True), ("haan ji", True), ("नहीं, गलत है", False), ("जी नहीं", False),
+    ("అవును, సరే", True), ("avunu", True), ("కాదు, తప్పు", False), ("లేదు", False),
+])
+def test_is_yes_hindi_telugu(text, expected):
+    assert is_yes(text) is expected
+
+
+def test_confirm_in_hindi_readback():
+    """Read-back spoken in Hindi words, caller says हाँ: confirmed, still enforced in code."""
+    session = Session()
+    confirm = make_tools(session)[0]
+    msgs = [{"role": "assistant", "content": "आपका नंबर है नौ सात शून्य तीन शून्य छह पांच सात एक पांच। क्या यह सही है?"},
+            {"role": "user", "content": "हाँ"}]
+    assert call(confirm, msgs, phone_number="9703065715") == {"confirmed_phone": "9703065715"}
+    msgs[1] = {"role": "user", "content": "नहीं"}
+    assert "error" in call(confirm, msgs, phone_number="9703065715") and session.phone is None
+
+
+def test_confirm_in_telugu_readback():
+    session = Session()
+    confirm = make_tools(session)[0]
+    msgs = [{"role": "assistant", "content": "మీ నంబర్ తొమ్మిది ఏడు సున్నా మూడు సున్నా ఆరు ఐదు ఏడు ఒకటి ఐదు. సరేనా?"},
+            {"role": "user", "content": "అవును"}]
+    assert call(confirm, msgs, phone_number="9703065715") == {"confirmed_phone": "9703065715"}
