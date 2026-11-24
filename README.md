@@ -24,13 +24,13 @@ How the parts fit together is in [PIPELINE.md](PIPELINE.md).
 
 ![The dashboard: today's figures, the week's bookings, each doctor's day, and the appointment list](docs/dashboard.png)
 
-**Try Call** opens the call screen beside the dashboard. Here it is ringing; once connected it shows the timer, the voice ribbon, the live transcript and a confirmation card after a booking.
+**Try Call** opens the call screen beside the dashboard: the call timer, the voice ribbon, the confirmed number, a booking card and the live transcript. (This shot uses a sample conversation from the dev-only `?preview` page, so no call was placed.)
 
-![The call screen while ringing, docked beside the dashboard](docs/call-screen.png)
+![The call screen mid-call, docked beside the dashboard](docs/call-screen.png)
 
-| Ink theme | Phone |
-|---|---|
-| ![The dashboard in the dark Ink theme](docs/dashboard-ink.png) | <img src="docs/mobile.png" alt="The dashboard at phone width" width="260"> |
+| Ink theme | Phone, Paper | Phone, Ink |
+|---|---|---|
+| ![The dashboard in the dark Ink theme](docs/dashboard-ink.png) | <img src="docs/mobile.png" alt="The dashboard at phone width, Paper theme" width="220"> | <img src="docs/mobile-ink.png" alt="The dashboard at phone width, Ink theme" width="220"> |
 
 ## Run it
 

@@ -4,6 +4,7 @@ import { useCall } from './useCall'
 import { useEvents } from './useEvents'
 import { Clock } from './components/Clock'
 import { DotGrid } from './components/DotGrid'
+import { PREVIEW, previewCall } from './preview'
 import { Figures } from './components/Figures'
 import { Charts } from './components/Charts'
 import { Phone } from './components/Phone'
@@ -134,6 +135,9 @@ export default function App() {
   const link = useEvents(onEvent, load, DEMO)
   const backendDown = link === 'reconnecting' || loadFailed
 
+  const previewAppt = PREVIEW ? appointments?.find((a) => a.status === 'booked') : undefined
+  const sample = previewAppt ? previewCall(call, previewAppt) : null // dev-only README screenshot, see preview.ts
+
   const callError = call.state === 'idle' ? call.error : null // while the phone is open it shows the error itself
 
   const startCall = () => {
@@ -146,7 +150,7 @@ export default function App() {
   }
 
   return (
-    <div className={`app${call.state === 'idle' ? '' : ' app--sheet'}`}>
+    <div className={`app${(sample?.call ?? call).state === 'idle' ? '' : ' app--sheet'}`}>
       <DotGrid />
       <header className="topbar">
         <h1 className="wordmark">Sunrise Clinic</h1>
@@ -223,7 +227,7 @@ export default function App() {
 
       {/* Stays mounted so the bot's audio keeps playing whatever the call sheet does. */}
       <audio ref={bindBotAudio} autoPlay />
-      <Phone call={call} lines={lines} phone={phone} appt={callAppt} reply={reply} />
+      <Phone {...(sample ?? { call, lines, phone, appt: callAppt, reply })} />
     </div>
   )
 }

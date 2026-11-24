@@ -71,6 +71,8 @@ tokens are CSS variables in `frontend/src/styles.css`; use them, never raw value
 - GitHub Pages demo (`.github/workflows/pages.yml`): built with VITE_DEMO=1, it reads the bundled
   `frontend/public/demo.json` snapshot (dates shifted to today), opens no event stream, disables Try Call
   and shows a one-line banner. Refresh the snapshot from a running backend after `python seed.py`.
+- Dev-only preview: `localhost:5173/?preview` shows the call sheet mid-call with a sample conversation
+  (`frontend/src/preview.ts`), for README screenshots. It is compiled out of production builds.
 - Themes: Paper (default) and Ink via `html[data-theme]`, saved in localStorage inside try/catch,
   applied before first paint by index.html.
 - Colour discipline:

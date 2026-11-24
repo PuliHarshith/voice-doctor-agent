@@ -117,7 +117,8 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
           </div>
 
           {doctors.map((doc) => {
-            const slots = doc.slots.filter((s) => s.date === active)
+            // slots in the collapsed hours have passed; the "Earlier" strip stands in for them
+            const slots = doc.slots.filter((s) => s.date === active && minutes(s.time) >= start)
             const free = slots.filter((s) => !s.is_booked).length
             return (
               <div className="row" key={doc.id}>
