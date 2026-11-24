@@ -4,6 +4,10 @@ import time
 
 from loguru import logger
 from pipecat.frames.frames import (
+    BotStartedSpeakingFrame,
+    BotStoppedSpeakingFrame,
+    InterruptionFrame,
+    UserStartedSpeakingFrame,
     LLMTextFrame,
     TranscriptionFrame,
     TTSAudioRawFrame,
@@ -43,3 +47,27 @@ class LatencyLogger(BaseObserver):
                 f"LATENCY from end of speech: STT text {ms('stt')} | turn ends {ms('turn_end')} | "
                 f"first LLM token {ms('llm')} | first audio {ms('audio')}"
             )
+
+
+class AudioDebugLogger(BaseObserver):
+    """DEBUG_AUDIO=1: one line per speech start/stop, turn start/end, bot speech and interruption,
+    with seconds since the call started, for tuning the VAD values in .env."""
+
+    NAMES = {
+        VADUserStartedSpeakingFrame: "VAD   speech started",
+        VADUserStoppedSpeakingFrame: "VAD   speech stopped",
+        UserStartedSpeakingFrame: "TURN  caller turn started",
+        UserStoppedSpeakingFrame: "TURN  caller turn ended",
+        BotStartedSpeakingFrame: "BOT   started speaking",
+        BotStoppedSpeakingFrame: "BOT   stopped speaking",
+        InterruptionFrame: "BOT   interrupted",
+    }
+
+    def __init__(self):
+        super().__init__()
+        self._t0 = time.monotonic()
+
+    async def on_push_frame(self, data: FramePushed):
+        name = self.NAMES.get(type(data.frame))
+        if name and data.first_push:
+            logger.info(f"AUDIO {time.monotonic() - self._t0:7.2f}s  {name}")

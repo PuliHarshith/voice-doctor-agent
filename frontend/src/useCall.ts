@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DeviceError, PipecatClient } from '@pipecat-ai/client-js'
 import { SmallWebRTCTransport } from '@pipecat-ai/small-webrtc-transport'
+import Daily from '@daily-co/daily-js'
 import { postCallState } from './api'
 
 export type CallState = 'idle' | 'connecting' | 'connected' | 'ended'
@@ -72,6 +73,17 @@ export function useCall() {
     setMuted(false)
     setState('connecting')
     postCallState('start')
+
+    // The transport gets the mic through Daily's call object and reuses an existing one, so creating it
+    // first is how the mic constraints get in: cancel the bot's own echo and room noise, level the volume.
+    if (!Daily.getCallInstance())
+      Daily.createCallObject({
+        inputSettings: {
+          audio: {
+            settings: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
+          },
+        },
+      })
 
     const pc = new PipecatClient({
       transport: new SmallWebRTCTransport(),

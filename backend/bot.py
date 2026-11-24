@@ -33,6 +33,7 @@ from pipecat.services.elevenlabs.stt import ElevenLabsRealtimeSTTService
 from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 from pipecat.services.google.llm import GoogleLLMService
 from pipecat.transports.base_transport import TransportParams
+from pipecat.turns.user_start import MinWordsUserTurnStartStrategy
 from pipecat.turns.user_stop.turn_analyzer_user_turn_stop_strategy import TurnAnalyzerUserTurnStopStrategy
 from pipecat.turns.user_turn_strategies import UserTurnStrategies
 
@@ -42,13 +43,20 @@ from events import bus
 from phone import mentions_phone_number
 from seed import ensure_seeded
 from tools import Session, make_tools
-from latency import LatencyLogger
+from latency import AudioDebugLogger, LatencyLogger
 from transcript import AssistantTranscript, UserTranscript
 
+# Silero VAD (Pipecat's defaults: confidence 0.7, start 0.2s, stop 0.2s, min volume 0.6). See .env.example.
+VAD_CONFIDENCE = float(os.getenv("VAD_CONFIDENCE") or 0.6)
+VAD_START_SECS = float(os.getenv("VAD_START_SECS") or 0.15)
+VAD_MIN_VOLUME = float(os.getenv("VAD_MIN_VOLUME") or 0.4)
 # Silence before a phrase is final. Long while a phone number is expected (callers pause between digit
 # groups and a short pause would end the turn mid-number), short otherwise (~0.5s faster replies).
-VAD_STOP_SECS = float(os.getenv("VAD_STOP_SECS") or 1.0)
+VAD_STOP_SECS = float(os.getenv("VAD_STOP_SECS") or 0.8)
 VAD_FAST_STOP_SECS = float(os.getenv("VAD_FAST_STOP_SECS") or 0.5)
+# Words needed to cut the bot off mid-sentence, so a cough or "mm" doesn't. When the bot is quiet, 1 word.
+INTERRUPT_MIN_WORDS = int(os.getenv("INTERRUPT_MIN_WORDS") or 2)
+DEBUG_AUDIO = os.getenv("DEBUG_AUDIO") == "1"
 
 SYSTEM_PROMPT = """You are Ava, the phone receptionist at Sunrise Clinic.
 You help callers check doctor availability, book appointments and cancel appointments.
@@ -123,7 +131,10 @@ async def bot(runner_args: RunnerArguments):
         stream_idle_timeout_secs=8.0,
     )
 
-    vad = SileroVADAnalyzer(params=VADParams(stop_secs=VAD_FAST_STOP_SECS))
+    vad = SileroVADAnalyzer(params=VADParams(
+        confidence=VAD_CONFIDENCE, start_secs=VAD_START_SECS, stop_secs=VAD_FAST_STOP_SECS,
+        min_volume=VAD_MIN_VOLUME,
+    ))
 
     def adapt_vad(bot_line: str):
         want = VAD_STOP_SECS if mentions_phone_number(bot_line) else VAD_FAST_STOP_SECS
@@ -136,13 +147,16 @@ async def bot(runner_args: RunnerArguments):
         context,
         user_params=LLMUserAggregatorParams(
             # Each VAD stop makes ElevenLabs finalise the audio so far and lets the turn end. Pipecat's 0.2s
-            # default (and 0.6s) split phone numbers at the pauses between digit groups: "9700." / "306." /
-            # "3715" arrived as three turns. 1.0s keeps a number in one piece; costs ~0.4s per reply.
+            # default split phone numbers at the pauses between digit groups: "9700." / "306." / "3715"
+            # arrived as three turns (0.6s did too, before Smart Turn and the "join them up" prompt).
             vad_analyzer=vad,
             # Smart Turn decides when the caller has finished. If it thinks they haven't, it waits
             # this long in silence before answering anyway (default 3s felt dead on the line).
             # Not lower: callers pause between digit groups when giving a phone number.
             user_turn_strategies=UserTurnStrategies(
+                # Replaces the default VAD start: any sound cut the bot off. Now the caller must say
+                # INTERRUPT_MIN_WORDS words (from STT, interim results included) while the bot talks.
+                start=[MinWordsUserTurnStartStrategy(min_words=INTERRUPT_MIN_WORDS)],
                 stop=[TurnAnalyzerUserTurnStopStrategy(
                     turn_analyzer=LocalSmartTurnAnalyzerV3(
                         params=SmartTurnParams(stop_secs=float(os.getenv("TURN_SILENCE_SECS") or 2.0))
@@ -169,7 +183,7 @@ async def bot(runner_args: RunnerArguments):
     task = PipelineTask(
         pipeline,
         params=PipelineParams(enable_metrics=True, enable_usage_metrics=True),
-        observers=[LatencyLogger(lambda: vad.params.stop_secs)],
+        observers=[LatencyLogger(lambda: vad.params.stop_secs)] + ([AudioDebugLogger()] if DEBUG_AUDIO else []),
     )
 
     last_recovery = 0.0
