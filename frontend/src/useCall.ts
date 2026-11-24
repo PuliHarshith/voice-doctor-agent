@@ -6,6 +6,7 @@ import { postCallState } from './api'
 
 export type CallState = 'idle' | 'connecting' | 'connected' | 'ended'
 export type CallError = 'mic-denied' | 'unreachable' | null
+export type Activity = 'listening' | 'thinking' | 'speaking'
 
 const setLevel = (el: HTMLDivElement | null, level: number) =>
   el?.style.setProperty('--level', Math.min(1, level * 5).toFixed(3))
@@ -25,6 +26,7 @@ export function useCall() {
   const [muted, setMuted] = useState(false)
   const [connectedAt, setConnectedAt] = useState<number | null>(null)
   const [endedAt, setEndedAt] = useState<number | null>(null)
+  const [activity, setActivity] = useState<Activity>('listening')
   const client = useRef<PipecatClient | null>(null)
   const botAudio = useRef<HTMLAudioElement | null>(null)
   const callerMeter = useRef<HTMLDivElement | null>(null)
@@ -74,6 +76,7 @@ export function useCall() {
     setMuted(false)
     setConnectedAt(null)
     setEndedAt(null)
+    setActivity('listening')
     setState('connecting')
     postCallState('start')
 
@@ -88,7 +91,10 @@ export function useCall() {
         },
       })
 
-    const pc = new PipecatClient({
+    const setActivityFor = (from: PipecatClient, a: Activity) => {
+      if (client.current === from) setActivity(a)
+    }
+    const pc: PipecatClient = new PipecatClient({
       transport: new SmallWebRTCTransport(),
       enableMic: true,
       enableCam: false,
@@ -99,6 +105,11 @@ export function useCall() {
           setConnectedAt(Date.now())
           setState('connected')
         },
+        // RTVI events from the bot's pipeline (its VAD and TTS), not guessed from audio levels.
+        onUserStartedSpeaking: () => setActivityFor(pc, 'listening'),
+        onUserStoppedSpeaking: () => setActivityFor(pc, 'thinking'),
+        onBotStartedSpeaking: () => setActivityFor(pc, 'speaking'),
+        onBotStoppedSpeaking: () => setActivityFor(pc, 'listening'),
         onDisconnected: () => {
           if (client.current !== pc) return // already finished; don't end a newer call
           postCallState('end')
@@ -165,5 +176,5 @@ export function useCall() {
   const bindCallerMeter = useCallback((el: HTMLDivElement | null) => void (callerMeter.current = el), [])
   const bindBotMeter = useCallback((el: HTMLDivElement | null) => void (botMeter.current = el), [])
 
-  return { state, error, muted, connectedAt, endedAt, start, end, toggleMute, dismiss, bindBotAudio, bindCallerMeter, bindBotMeter }
+  return { state, error, muted, activity, connectedAt, endedAt, start, end, toggleMute, dismiss, bindBotAudio, bindCallerMeter, bindBotMeter }
 }

@@ -22,6 +22,7 @@ export type ServerEvent =
   | { type: 'appointment_booked'; appointment: Appointment; ts: number }
   | { type: 'appointment_cancelled'; appointment: Appointment; ts: number }
   | { type: 'slots_changed'; doctor_id: number; date: string; ts: number }
+  | { type: 'phone_confirmed'; phone: string; ts: number }
 
 export async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(path)

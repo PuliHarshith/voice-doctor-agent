@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { useCall } from '../useCall'
 import { Timer } from './CallConsole'
-import { formatClock } from '../format'
+import { formatClock, formatPhone } from '../format'
 import type { Line } from './Transcript'
 
 type Call = ReturnType<typeof useCall>
@@ -9,10 +9,11 @@ type Call = ReturnType<typeof useCall>
 const LABEL = { idle: '', connecting: 'Ringing', connected: 'Connected', ended: 'Call ended' } as const
 const ENDED_MS = 1600 // how long "Call ended" stays up before the screen fades back to the dashboard
 const FADE_MS = 200 // matches .phone-layer transition
+const ACTIVITY = { listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking' } as const
 
 /** Phone-style call screen over the dashboard: ringing -> connected -> ended. */
-export function Phone({ call, lines }: { call: Call; lines: Line[] }) {
-  const { state, error, muted, connectedAt, endedAt, end, toggleMute, dismiss, bindCallerMeter, bindBotMeter } = call
+export function Phone({ call, lines, phone }: { call: Call; lines: Line[]; phone: string | null }) {
+  const { state, error, muted, activity, connectedAt, endedAt, end, toggleMute, dismiss, bindCallerMeter, bindBotMeter } = call
   const [closing, setClosing] = useState(false)
   const box = useRef<HTMLOListElement>(null)
   const endBtn = useRef<HTMLButtonElement>(null)
@@ -49,6 +50,10 @@ export function Phone({ call, lines }: { call: Call; lines: Line[] }) {
     <div className={`phone-layer${closing ? ' phone-layer--closing' : ''}`}>
       <section className={`phone phone--${state}`} role="dialog" aria-modal="true" aria-label="Call with Ava">
         <header className="phone__head">
+          {/* Line is always there so nothing shifts when the number arrives. */}
+          <p className="phone__caller num" aria-label="Caller's confirmed number">
+            {phone && <span key={phone}>{formatPhone(phone)}</span>}
+          </p>
           <p className="phone__org">Sunrise Clinic</p>
           <h2 className="phone__name">Ava</h2>
           <p className="phone__role">Receptionist</p>
@@ -67,6 +72,11 @@ export function Phone({ call, lines }: { call: Call; lines: Line[] }) {
               )}
             </span>
           </div>
+          {state === 'connected' && (
+            <p key={activity} className={`phone__activity phone__activity--${activity}`} aria-live="polite">
+              {ACTIVITY[activity]}
+            </p>
+          )}
           <div className="phone__meters" aria-hidden="true">
             <Meter label="You" bind={bindCallerMeter} off={state !== 'connected' || muted} />
             <Meter label="Ava" bind={bindBotMeter} off={state !== 'connected'} />

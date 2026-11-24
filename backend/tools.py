@@ -159,6 +159,7 @@ def make_tools(session: Session) -> list:
         else:
             session.phone = phone
             result = {"confirmed_phone": phone}
+            bus.publish("phone_confirmed", phone=phone)
         await params.result_callback(result)
 
     async def check_doctor_availability(params: FunctionCallParams, doctor: str | None = None,

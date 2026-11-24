@@ -152,6 +152,24 @@ def test_cannot_cancel_someone_elses_appointment(tools):
 
 # --- events ---
 
+def test_confirm_publishes_the_digits(tools):
+    from events import bus
+    with bus.subscribe() as q:
+        q.get_nowait()  # current call status
+        confirmed(tools)
+        assert q.get_nowait() | {"ts": 0} == {"type": "phone_confirmed", "phone": PHONE, "ts": 0}
+        assert q.empty()
+
+
+def test_cancel_keeps_the_row_as_cancelled(tools):
+    import db
+    confirmed(tools)
+    appt = call(tools.book, doctor="Iyer", date=TOMORROW, time="2 PM")["appointment_id"]
+    call(tools.cancel)
+    with db.connect() as conn:
+        assert db.get_appointment(conn, appt)["status"] == "cancelled"
+
+
 def test_book_and_cancel_publish_events_after_the_write(tools):
     from events import bus
     confirmed(tools)

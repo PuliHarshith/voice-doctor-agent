@@ -34,6 +34,7 @@ export default function App() {
   const [appointments, setAppointments] = useState<Appointment[] | null>(null)
   const [loadFailed, setLoadFailed] = useState(false)
   const [lines, setLines] = useState<Line[]>([])
+  const [phone, setPhone] = useState<string | null>(null) // caller's number once they confirm the read-back
   const [day, setDay] = useState<string | null>(null)
   const [flashing, setFlashing] = useState<Set<string>>(() => new Set())
   const lineId = useRef(0)
@@ -68,6 +69,8 @@ export default function App() {
     (e: ServerEvent) => {
       if (e.type === 'transcript') {
         setLines((ls) => mergeLine(ls, e, ++lineId.current))
+      } else if (e.type === 'phone_confirmed') {
+        setPhone(e.phone)
       } else if (e.type === 'appointment_booked' || e.type === 'appointment_cancelled') {
         const a = e.appointment
         const booked = e.type === 'appointment_booked'
@@ -93,6 +96,7 @@ export default function App() {
 
   const startCall = () => {
     setLines([])
+    setPhone(null)
     call.start()
   }
 
@@ -144,7 +148,7 @@ export default function App() {
         </div>
       </main>
 
-      <Phone call={call} lines={lines} />
+      <Phone call={call} lines={lines} phone={phone} />
     </div>
   )
 }
