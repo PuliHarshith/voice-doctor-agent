@@ -336,6 +336,11 @@ button {
   font-size: var(--t-small);
 }
 
+.banner a {
+  color: var(--green-ink);
+  font-weight: 500;
+}
+
 .board {
   display: grid;
   gap: var(--s3);

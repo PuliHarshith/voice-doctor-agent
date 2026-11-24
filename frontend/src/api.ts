@@ -1,3 +1,5 @@
+import { today } from './format'
+
 // Shapes returned by backend/api.py and published by backend/events.py.
 
 export type Slot = { date: string; time: string; is_booked: boolean } // date YYYY-MM-DD, time HH:MM (24h)
@@ -39,3 +41,19 @@ export function postCallState(which: 'start' | 'end') {
 /** Identity keys used to flash the exact slot / ledger row that changed. */
 export const slotKey = (doctorId: number, date: string, time: string) => `slot:${doctorId}|${date}|${time}`
 export const apptKey = (id: number) => `appt:${id}`
+
+/** The GitHub Pages build: a read-only dashboard over a bundled snapshot, with no backend and no calls. */
+export const DEMO = import.meta.env.VITE_DEMO === '1'
+
+/** Loads demo.json and moves its dates by whole days, so the snapshot's "today" is today here. */
+export async function loadDemo() {
+  type Snapshot = { today: string; doctors: Doctor[]; appointments: Appointment[] }
+  const snap = await getJSON<Snapshot>(`${import.meta.env.BASE_URL}demo.json`)
+  const DAY = 86_400_000
+  const shift = Math.round((Date.parse(today()) - Date.parse(snap.today)) / DAY)
+  const move = (iso: string) => new Date(Date.parse(iso) + shift * DAY).toISOString().slice(0, 10)
+  return {
+    doctors: snap.doctors.map((d) => ({ ...d, slots: d.slots.map((s) => ({ ...s, date: move(s.date) })) })),
+    appointments: snap.appointments.map((a) => ({ ...a, date: move(a.date) })),
+  }
+}

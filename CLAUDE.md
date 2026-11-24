@@ -68,6 +68,9 @@ tokens are CSS variables in `frontend/src/styles.css`; use them, never raw value
   (#0B3A35) with SVG grain, an 80px timer, the voice ribbon and "reply 0.0 s".
 - 390px: everything stacks; figures sit two by two; Appointments has a search box (phone digits or doctor); charts stack; the axis shows every third hour;
   the table hides Doctor and moves the time under the date; clock and status pill hide.
+- GitHub Pages demo (`.github/workflows/pages.yml`): built with VITE_DEMO=1, it reads the bundled
+  `frontend/public/demo.json` snapshot (dates shifted to today), opens no event stream, disables Try Call
+  and shows a one-line banner. Refresh the snapshot from a running backend after `python seed.py`.
 - Themes: Paper (default) and Ink via `html[data-theme]`, saved in localStorage inside try/catch,
   applied before first paint by index.html.
 - Colour discipline:

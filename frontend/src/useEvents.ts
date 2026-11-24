@@ -1,21 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ServerEvent } from './api'
 
-export type LinkState = 'connecting' | 'live' | 'reconnecting'
+export type LinkState = 'connecting' | 'live' | 'reconnecting' | 'demo'
 
 /**
  * Subscribes to /api/events. EventSource retries on its own at a fixed interval, so we close it on
  * error and reopen with exponential backoff (1s, 2s, 4s ... capped at 30s) instead.
  * onOpen fires on every (re)connect so the caller can refetch whatever it missed while offline.
  */
-export function useEvents(onEvent: (e: ServerEvent) => void, onOpen: () => void): LinkState {
-  const [link, setLink] = useState<LinkState>('connecting')
+export function useEvents(onEvent: (e: ServerEvent) => void, onOpen: () => void, demo = false): LinkState {
+  const [link, setLink] = useState<LinkState>(demo ? 'demo' : 'connecting')
   const handlers = useRef({ onEvent, onOpen })
   useEffect(() => {
     handlers.current = { onEvent, onOpen }
   })
 
   useEffect(() => {
+    if (demo) {
+      handlers.current.onOpen() // no stream to open: load the snapshot once
+      return
+    }
     let source: EventSource | null = null
     let retry: ReturnType<typeof setTimeout> | undefined
     let delay = 1000
@@ -50,7 +54,7 @@ export function useEvents(onEvent: (e: ServerEvent) => void, onOpen: () => void)
       clearTimeout(retry)
       source?.close()
     }
-  }, [])
+  }, [demo])
 
   return link
 }

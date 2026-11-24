@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { apptKey, getJSON, slotKey, type Appointment, type Doctor, type ServerEvent } from './api'
+import { apptKey, DEMO, getJSON, loadDemo, slotKey, type Appointment, type Doctor, type ServerEvent } from './api'
 import { useCall } from './useCall'
 import { useEvents } from './useEvents'
 import { Clock } from './components/Clock'
@@ -74,7 +74,12 @@ export default function App() {
 
   const load = useCallback(async () => {
     try {
-      const [d, a] = await Promise.all([getJSON<Doctor[]>('/api/doctors'), getJSON<Appointment[]>('/api/appointments')])
+      const { doctors: d, appointments: a } = DEMO
+        ? await loadDemo()
+        : {
+            doctors: await getJSON<Doctor[]>('/api/doctors'),
+            appointments: await getJSON<Appointment[]>('/api/appointments'),
+          }
       setDoctors(d)
       setAppointments(a)
       setLoadFailed(false)
@@ -126,7 +131,7 @@ export default function App() {
 
   // Every (re)connect of the stream loads doctors + appointments, covering events missed while it was down.
   // The stream doubles as the health check: if /api/events can't connect, the backend is down.
-  const link = useEvents(onEvent, load)
+  const link = useEvents(onEvent, load, DEMO)
   const backendDown = link === 'reconnecting' || loadFailed
 
   const callError = call.state === 'idle' ? call.error : null // while the phone is open it shows the error itself
@@ -151,7 +156,7 @@ export default function App() {
           title="Updates from the agent arrive here as they happen"
         >
           <span className="live__dot" />
-          {link === 'live' ? 'Live' : 'Offline'}
+          {link === 'live' ? 'Live' : link === 'demo' ? 'Demo data' : 'Offline'}
         </span>
         <span className={`pill pill--${call.state}`}>
           <span className="pill__dot" />
@@ -164,14 +169,25 @@ export default function App() {
             </button>
           ))}
         </div>
-        <button className="btn btn--start" onClick={startCall} disabled={call.state !== 'idle'}>
+        <button
+          className="btn btn--start"
+          onClick={startCall}
+          disabled={DEMO || call.state !== 'idle'}
+          title={DEMO ? 'Voice calls need the local backend; see the README' : undefined}
+        >
           <Icon name="call" />
           Try Call
         </button>
       </header>
 
-      {(backendDown || callError) && (
+      {(DEMO || backendDown || callError) && (
         <div className="banners" role="status">
+          {DEMO && (
+            <p className="banner">
+              Read-only demo with sample data. Voice calls run on the local backend: see the{' '}
+              <a href="https://github.com/PuliHarshith/voice-doctor-agent#readme">README and demo video</a>.
+            </p>
+          )}
           {backendDown && (
             <p className="banner">
               {link === 'reconnecting'

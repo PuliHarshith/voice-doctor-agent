@@ -6,6 +6,8 @@ A voice receptionist you talk to in the browser: it checks doctors' free slots, 
 
 Demo video: (link)
 
+Live dashboard (read-only, sample data): https://puliharshith.github.io/voice-doctor-agent/. Voice calls need the backend running on your machine (below), so Try Call is off there.
+
 You talk to Ava, a receptionist, from your browser. She can check a doctor's free slots, book an appointment and cancel one. She knows who you are only from the phone number you say. She reads it back digit by digit, and nothing is booked or cancelled until you say yes.
 
 - **Voice pipeline:** Pipecat 1.17 (Python), in `backend/`

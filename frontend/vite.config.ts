@@ -18,6 +18,7 @@ const toBackend: ProxyOptions = {
 }
 
 export default defineConfig({
+  base: process.env.VITE_BASE ?? '/', // '/voice-doctor-agent/' for the GitHub Pages demo
   plugins: [react()],
   server: {
     port: 5173,
