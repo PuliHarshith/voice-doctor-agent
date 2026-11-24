@@ -14,7 +14,7 @@ export function Figures({ doctors, appointments }: { doctors: Doctor[]; appointm
     <section className="figures" aria-label="Today">
       {figures.map(([label, value]) => (
         <div key={label} className="figure">
-          <span className="figure__label">{label}</span>
+          <span className="label">{label}</span>
           <span className="figure__value num">{value}</span>
         </div>
       ))}

@@ -31,6 +31,14 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
     <section className="panel schedule" aria-label="Doctors and slots">
       <header className="section-head">
         <h2>Doctors</h2>
+        <span className="legend" aria-hidden="true">
+          <span>
+            <i className="slot slot--key" /> Free
+          </span>
+          <span>
+            <i className="slot slot--key slot--booked" /> Booked
+          </span>
+        </span>
         <nav className="days" aria-label="Day">
           {days.map((d) => {
             const slots = doctors.flatMap((doc) => doc.slots.filter((s) => s.date === d))
@@ -57,7 +65,7 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
       ) : (
         <div className="timeline">
           <div className="timeline__axis" aria-hidden="true">
-            <span />
+            <span className="label">Doctor</span>
             <div className="timeline__track">
               {hours.map((h) => (
                 <span key={h} className="tick-label num" style={{ left: `${((h * 60 - startMin) / span) * 100}%` }}>
@@ -71,7 +79,7 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
                 </span>
               )}
             </div>
-            <span />
+            <span className="label lane-free">Free</span>
           </div>
 
           {doctors.map((doc) => {
@@ -109,10 +117,6 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
             )
           })}
 
-          <div className="legend" aria-hidden="true">
-            <span><i className="slot slot--key" /> Free</span>
-            <span><i className="slot slot--key slot--booked" /> Booked</span>
-          </div>
         </div>
       )}
     </section>

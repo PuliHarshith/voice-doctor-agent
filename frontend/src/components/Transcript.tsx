@@ -14,10 +14,10 @@ export function Transcript({ lines, phone }: { lines: Line[]; phone: string | nu
         <h2>Transcript</h2>
       </header>
       <div className="chat__number">
-        <span className="chat__number-label">Caller</span>
+        <span className="label">Caller</span>
         <ReadBack key={phone} phone={phone} />
       </div>
-      {lines.length === 0 ? <p className="empty">No conversation yet.</p> : <ChatLines lines={lines} />}
+      {lines.length === 0 ? <p className="chat__empty">No conversation yet.</p> : <ChatLines lines={lines} />}
     </section>
   )
 }
