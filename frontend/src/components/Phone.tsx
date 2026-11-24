@@ -15,11 +15,23 @@ const ENDED_MS = 1600 // how long "Call ended" stays up before the screen fades 
 const FADE_MS = 200 // matches .phone-layer transition
 const ACTIVITY = { listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking' } as const
 
-type Props = { call: Call; lines: Line[]; phone: string | null; appt: Appointment | null }
+type Props = { call: Call; lines: Line[]; phone: string | null; appt: Appointment | null; reply: number | null }
 
 /** Phone-style call sheet: ringing -> connected -> ended. */
-export function Phone({ call, lines, phone, appt }: Props) {
-  const { state, error, muted, activity, connectedAt, endedAt, end, toggleMute, dismiss, bindCallerMeter, bindBotMeter } = call
+export function Phone({ call, lines, phone, appt, reply }: Props) {
+  const {
+    state,
+    error,
+    muted,
+    activity,
+    connectedAt,
+    endedAt,
+    end,
+    toggleMute,
+    dismiss,
+    bindCallerMeter,
+    bindBotMeter,
+  } = call
   const [closing, setClosing] = useState(false)
   const endBtn = useRef<HTMLButtonElement>(null)
 
@@ -53,30 +65,26 @@ export function Phone({ call, lines, phone, appt }: Props) {
   return (
     <div className={`phone-layer${closing ? ' phone-layer--closing' : ''}`}>
       <section className={`phone phone--${state}`} role="dialog" aria-label="Call with Ava">
-        <header className="phone__head">
-          <p className="phone__org">Sunrise Clinic</p>
-          <h2 className="phone__name">Ava</h2>
-          <div className="phone__status">
-            <span key={state} className={`state state--${state} phone__state`}>
+        {/* Hero: deep green with grain; the timer, the voice ribbon and the last reply time. */}
+        <header className="phone__head hero">
+          <div className="hero__top">
+            <span>
+              <span className="hero__org">Sunrise Clinic</span>
+              <h2 className="hero__name">Ava</h2>
+            </span>
+            <span key={state} className={`state state--${state} hero__state`}>
               <span className="state__dot" />
               {LABEL[state]}
             </span>
-            <span className="phone__timer num">
-              {state === 'connected' && connectedAt ? (
-                <Timer since={connectedAt} />
-              ) : connectedAt && endedAt ? (
-                formatClock(Math.floor((endedAt - connectedAt) / 1000))
-              ) : (
-                '00:00'
-              )}
-            </span>
           </div>
-          {/* Always there, so nothing shifts when the number arrives. */}
-          <div className="phone__caller" aria-label="Caller's confirmed number">
-            <ReadBack key={phone} phone={phone} />
-          </div>
-          <p key={activity} className={`phone__activity phone__activity--${activity}`} aria-live="polite">
-            {state === 'connected' ? ACTIVITY[activity] : ' '}
+          <p className="hero__timer num">
+            {state === 'connected' && connectedAt ? (
+              <Timer since={connectedAt} />
+            ) : connectedAt && endedAt ? (
+              formatClock(Math.floor((endedAt - connectedAt) / 1000))
+            ) : (
+              '00:00'
+            )}
           </p>
           <svg
             className={`ribbon${state === 'connected' ? '' : ' ribbon--off'}`}
@@ -88,17 +96,29 @@ export function Phone({ call, lines, phone, appt }: Props) {
             <path className="ribbon__caller" ref={bindCallerMeter} d={FLAT} />
             <path className="ribbon__bot" ref={bindBotMeter} d={FLAT} />
           </svg>
-          <p className="ribbon__key" aria-hidden="true">
-            <span>
-              <i />
-              You
+          <div className="hero__meta">
+            <span className="ribbon__key" aria-hidden="true">
+              <span>
+                <i />
+                You
+              </span>
+              <span>
+                <i className="is-bot" />
+                Ava
+              </span>
             </span>
-            <span>
-              <i className="is-bot" />
-              Ava
+            <span key={activity} className={`hero__activity hero__activity--${activity}`} aria-live="polite">
+              {state === 'connected' ? ACTIVITY[activity] : ''}
             </span>
-          </p>
+            <span className="hero__reply num" title="End of your speech to Ava's first word, last turn">
+              reply <b>{reply === null ? '—' : `${reply.toFixed(1)} s`}</b>
+            </span>
+          </div>
         </header>
+        {/* Always there, so nothing shifts when the number arrives. */}
+        <div className="phone__caller" aria-label="Caller's confirmed number">
+          <ReadBack key={phone} phone={phone} />
+        </div>
         <div className="phone__body">
           {error === 'mic-denied' ? (
             <p className="phone__note">Microphone blocked. Allow it for this site and try again.</p>
@@ -112,7 +132,9 @@ export function Phone({ call, lines, phone, appt }: Props) {
                   className={`phone__card phone__card--${appt.status}`}
                   role="status"
                 >
-                  <span className={`status status--${appt.status}`}>{appt.status === 'booked' ? 'Booked' : 'Cancelled'}</span>
+                  <span className={`status status--${appt.status}`}>
+                    {appt.status === 'booked' ? 'Booked' : 'Cancelled'}
+                  </span>
                   <p className="phone__card-doc">{appt.doctor}</p>
                   <p className="phone__card-when num">
                     {formatDate(appt.date)} · {formatTime(appt.time)}

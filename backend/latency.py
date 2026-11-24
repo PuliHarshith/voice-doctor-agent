@@ -17,6 +17,8 @@ from pipecat.frames.frames import (
 )
 from pipecat.observers.base_observer import BaseObserver, FramePushed
 
+from events import bus
+
 
 class LatencyLogger(BaseObserver):
     def __init__(self, vad_stop_secs):
@@ -47,6 +49,8 @@ class LatencyLogger(BaseObserver):
                 f"LATENCY from end of speech: STT text {ms('stt')} | turn ends {ms('turn_end')} | "
                 f"first LLM token {ms('llm')} | first audio {ms('audio')}"
             )
+            # the call sheet shows this as "reply 1.8 s"
+            bus.publish("reply_timing", seconds=round(t["audio"] - s, 1))
 
 
 class AudioDebugLogger(BaseObserver):

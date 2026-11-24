@@ -928,7 +928,7 @@ tr.flash td {
   width: min(var(--sheet-w), 100%);
   height: min(760px, 100%);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-sheet);
@@ -940,28 +940,9 @@ tr.flash td {
   text-align: center;
 }
 
-.phone__org {
-  font-size: var(--t-sm);
-  color: var(--ink-2);
-}
 
-.phone__name {
-  margin-top: var(--s-1);
-  font: 750 36px/1 var(--display);
-  font-variation-settings: 'opsz' 96;
-  letter-spacing: -0.02em;
-}
 
-.phone__status {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-top: var(--s2);
-}
 
-.phone__state {
-  animation: fade 160ms ease-out; /* re-keyed on every state change: a short fade, no movement */
-}
 
 .state {
   display: inline-flex;
@@ -991,38 +972,136 @@ tr.flash td {
   background: var(--accent);
 }
 
-.phone__timer {
-  font-size: var(--t-lg);
-  font-weight: 600;
-}
 
-.phone--connecting .phone__timer,
-.phone--ended .phone__timer {
-  color: var(--ink-2);
-}
 
 .phone__caller {
-  min-height: 40px;
+  min-height: 52px;
   display: grid;
   place-items: center;
-  margin-top: var(--s1);
   padding: var(--s0) 0;
-  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 
-.phone__caller .readback {
-  font-size: 24px;
+/* ---------- call sheet hero ---------- */
+
+/* Fixed colours in both themes: the hero is its own dark green surface. */
+.hero {
+  --hero-bg: #0b3a35;
+  --hero-ink: #eef6f3;
+  --hero-ink-2: rgb(238 246 243 / 0.72); /* 8:1+ on the green */
+  --hero-accent: #7fd6cb;
+  position: relative;
+  isolation: isolate;
+  padding: var(--s3) var(--s3) var(--s2);
+  text-align: left;
+  color: var(--hero-ink);
+  /* the one gradient in the app: a soft light from above */
+  background: radial-gradient(120% 90% at 50% 0%, rgb(127 214 203 / 0.22), transparent 60%), var(--hero-bg);
 }
 
-.phone__activity {
-  font-size: var(--t-sm);
-  color: var(--ink-2);
-  animation: fade 160ms ease-out;
+/* grain: SVG fractal noise, tiled, at low opacity */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.phone__activity--speaking {
-  color: var(--accent);
+.hero__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
 }
+
+.hero__org {
+  display: block;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hero-ink-2);
+}
+
+.hero__name {
+  margin-top: 2px;
+  font: 700 28px/1.1 var(--display);
+  font-variation-settings: 'opsz' 72;
+}
+
+.hero .state {
+  color: var(--hero-ink-2);
+}
+
+.hero .state--connected {
+  color: var(--hero-ink);
+}
+
+.hero .state__dot {
+  background: var(--hero-ink-2);
+}
+
+.hero .state--connecting .state__dot,
+.hero .state--connected .state__dot {
+  background: var(--hero-accent);
+}
+
+.hero__timer {
+  margin-top: var(--s2);
+  font: 600 64px/1 var(--display);
+  font-variation-settings: 'opsz' 144;
+  letter-spacing: -0.02em;
+}
+
+.phone--connecting .hero__timer,
+.phone--ended .hero__timer {
+  color: var(--hero-ink-2);
+}
+
+.hero .ribbon__caller {
+  stroke: var(--hero-ink-2);
+}
+
+.hero .ribbon__bot {
+  stroke: var(--hero-accent);
+}
+
+.hero__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s1);
+  font-size: var(--t-xs);
+  color: var(--hero-ink-2);
+}
+
+.hero .ribbon__key {
+  padding: 0;
+  border: 0;
+  color: var(--hero-ink-2);
+}
+
+.hero .ribbon__key i {
+  background: var(--hero-ink-2);
+}
+
+.hero .ribbon__key .is-bot {
+  background: var(--hero-accent);
+}
+
+.hero__activity--speaking {
+  color: var(--hero-accent);
+}
+
+.hero__reply b {
+  font-weight: 600;
+  color: var(--hero-ink);
+}
+
+
+
 
 /* Voice ribbon: two hand-drawn lines, the caller's in ink and Ava's in the accent, drawn by useCall
    from the live audio every frame. */

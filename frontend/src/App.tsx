@@ -62,6 +62,7 @@ export default function App() {
   const [lines, setLines] = useState<Line[]>([])
   const [phone, setPhone] = useState<string | null>(null) // caller's number once they confirm the read-back
   const [callAppt, setCallAppt] = useState<Appointment | null>(null) // booked/cancelled during this call
+  const [reply, setReply] = useState<number | null>(null) // last measured reply time, seconds
   const [day, setDay] = useState<string | null>(null)
   const [flashing, setFlashing] = useState<Set<string>>(() => new Set())
   const lineId = useRef(0)
@@ -100,6 +101,8 @@ export default function App() {
         setLines((ls) => mergeLine(ls, e, ++lineId.current))
       } else if (e.type === 'phone_confirmed') {
         setPhone(e.phone)
+      } else if (e.type === 'reply_timing') {
+        setReply(e.seconds)
       } else if (e.type === 'appointment_booked' || e.type === 'appointment_cancelled') {
         const a = e.appointment
         const booked = e.type === 'appointment_booked'
@@ -130,6 +133,7 @@ export default function App() {
     setLines([])
     setPhone(null)
     setCallAppt(null)
+    setReply(null)
     unlockTones()
     call.start()
   }
@@ -191,7 +195,7 @@ export default function App() {
 
       {/* Stays mounted so the bot's audio keeps playing whatever the call sheet does. */}
       <audio ref={bindBotAudio} autoPlay />
-      <Phone call={call} lines={lines} phone={phone} appt={callAppt} />
+      <Phone call={call} lines={lines} phone={phone} appt={callAppt} reply={reply} />
     </div>
   )
 }
