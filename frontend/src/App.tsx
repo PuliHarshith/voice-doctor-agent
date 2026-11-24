@@ -4,6 +4,7 @@ import { useCall } from './useCall'
 import { useEvents } from './useEvents'
 import { CallConsole } from './components/CallConsole'
 import { Phone } from './components/Phone'
+import { Aside, Figures } from './components/Overview'
 import { unlockTones } from './tones'
 import { Transcript, type Line } from './components/Transcript'
 import { Schedule } from './components/Schedule'
@@ -120,9 +121,13 @@ export default function App() {
 
       {(backendDown || call.error) && (
         <div className="banners" role="status">
-          {backendDown && <p className="banner">Backend unreachable. Start backend/bot.py; this page retries on its own.</p>}
+          {backendDown && (
+            <p className="banner">Backend unreachable. Start backend/bot.py; this page retries on its own.</p>
+          )}
           {call.error === 'mic-denied' && (
-            <p className="banner">Microphone blocked. Allow microphone access for this site, then start the call again.</p>
+            <p className="banner">
+              Microphone blocked. Allow microphone access for this site, then start the call again.
+            </p>
           )}
           {call.error === 'unreachable' && <p className="banner">Couldn't connect the call. Is the backend running?</p>}
         </div>
@@ -134,19 +139,27 @@ export default function App() {
           <Transcript lines={lines} />
         </div>
         <div className="col col--work">
-          {doctors ? (
-            <Schedule doctors={doctors} day={day} onDay={setDay} flashing={flashing} />
-          ) : (
-            <section className="schedule">
-              <header className="section-head"><h2>Availability</h2></header>
-              <p className="empty">{backendDown ? 'Unavailable.' : 'Loading…'}</p>
-            </section>
-          )}
+          {doctors && appointments && <Figures doctors={doctors} appointments={appointments} />}
+          <div className="work__top">
+            {doctors ? (
+              <Schedule doctors={doctors} day={day} onDay={setDay} flashing={flashing} />
+            ) : (
+              <section className="schedule">
+                <header className="section-head">
+                  <h2>Availability</h2>
+                </header>
+                <p className="empty">{backendDown ? 'Unavailable.' : 'Loading…'}</p>
+              </section>
+            )}
+            {doctors && appointments && <Aside doctors={doctors} appointments={appointments} />}
+          </div>
           {appointments ? (
             <Ledger appointments={appointments} flashing={flashing} />
           ) : (
             <section className="ledger">
-              <header className="section-head"><h2>Appointments</h2></header>
+              <header className="section-head">
+                <h2>Appointments</h2>
+              </header>
               <p className="empty">{backendDown ? 'Unavailable.' : 'Loading…'}</p>
             </section>
           )}

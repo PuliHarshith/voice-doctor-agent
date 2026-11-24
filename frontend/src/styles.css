@@ -147,7 +147,120 @@ button:focus-visible {
 }
 
 .col--work {
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* scrolls on its own when the screen is too short for everything */
+}
+
+.col--work > .ledger {
+  flex: 1;
+  min-height: 260px; /* never squeezed to nothing: header + a few rows stay visible */
+}
+
+/* Availability with Up next / By doctor beside it. */
+.work__top {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  border-bottom: 1px solid var(--line);
+}
+
+.work__top .schedule {
+  border-bottom: 0;
+  min-width: 0;
+}
+
+/* ---------- figures strip ---------- */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+
+.figure {
+  display: grid;
+  gap: 8px;
+  padding: 16px var(--pad) 14px;
+}
+
+.figure + .figure {
+  border-left: 1px solid var(--line);
+}
+
+.figure__label {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.figure__value {
+  font: 400 34px/1 var(--serif);
+}
+
+/* ---------- aside: up next, by doctor ---------- */
+
+.aside {
+  border-left: 1px solid var(--line);
+  padding-bottom: 18px;
+}
+
+.next,
+.bars {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--pad);
+}
+
+.next__item {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.next__time {
+  font-weight: 500;
+}
+
+.bars {
+  display: grid;
+  gap: 12px;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: 108px 1fr 18px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.bar__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* a hairline track; the count is a short accent rule on it */
+.bar__track {
+  position: relative;
+  height: 1px;
+  background: var(--line);
+}
+
+.bar__fill {
+  position: absolute;
+  left: 0;
+  top: -1px;
+  height: 3px;
+  background: var(--accent);
+  transition: width 200ms ease-out;
+}
+
+.bar__n {
+  text-align: right;
+  color: var(--ink-2);
 }
 
 .section-head {
@@ -394,6 +507,14 @@ button:focus-visible {
 
 .day__num {
   font: 400 20px/1.1 var(--serif);
+}
+
+/* bookings that day; the line is kept even when empty so tabs don't change height */
+.day__n {
+  min-height: 13px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent);
 }
 
 .day--active {
@@ -862,6 +983,19 @@ tr.flash td {
 
 /* ---------- narrow screens ---------- */
 
+@media (max-width: 1200px) {
+  .work__top {
+    grid-template-columns: 1fr;
+  }
+
+  .aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
 @media (max-width: 960px) {
   .app {
     height: auto;
@@ -894,6 +1028,22 @@ tr.flash td {
 @media (max-width: 560px) {
   :root {
     --pad: 16px;
+  }
+
+  .figures {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .figure:nth-child(3) {
+    border-left: 0;
+  }
+
+  .figure:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+
+  .aside {
+    grid-template-columns: 1fr;
   }
 
   .section-head {

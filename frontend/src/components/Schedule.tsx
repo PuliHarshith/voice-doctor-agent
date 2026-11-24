@@ -28,17 +28,19 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
         <h2>Availability</h2>
         <nav className="days" aria-label="Day">
           {days.map((d) => {
-            const free = doctors.reduce((n, doc) => n + doc.slots.filter((s) => s.date === d && !s.is_booked).length, 0)
+            const slots = doctors.flatMap((doc) => doc.slots.filter((s) => s.date === d))
+            const booked = slots.filter((s) => s.is_booked).length
             return (
               <button
                 key={d}
                 className={`day${d === active ? ' day--active' : ''}`}
                 onClick={() => onDay(d)}
                 aria-pressed={d === active}
-                title={`${free} free`}
+                title={`${slots.length - booked} free, ${booked} booked`}
               >
                 <span className="day__wd">{weekday(d)}</span>
                 <span className="day__num num">{dayOfMonth(d)}</span>
+                <span className="day__n num">{booked || ''}</span>
               </button>
             )
           })}
