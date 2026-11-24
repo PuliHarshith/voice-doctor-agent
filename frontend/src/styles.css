@@ -12,6 +12,7 @@
   --accent: #0f6e6a; /* deep teal */
   --on-accent: #ffffff; /* text on the accent */
   --accent-wash: rgb(15 110 106 / 0.1);
+  --accent-line: rgb(15 110 106 / 0.5); /* free slot outline */
   --muted-wash: #ece8e0; /* Cancelled pill */
   --scrim: rgb(27 26 23 / 0.32);
 
@@ -59,6 +60,7 @@
   --accent: #4fb3a9;
   --on-accent: #0c1413;
   --accent-wash: rgb(79 179 169 / 0.14);
+  --accent-line: rgb(79 179 169 / 0.55);
   --muted-wash: #262420;
   --scrim: rgb(0 0 0 / 0.5);
   color-scheme: dark;
@@ -535,17 +537,47 @@ button {
   position: absolute;
   display: grid;
   place-items: center;
-  overflow: hidden;
   top: 3px;
   bottom: 3px;
   margin-left: 1px;
   max-width: calc(100% - 2px); /* 2px gap between neighbouring half-hour blocks */
-  border: 1px solid var(--ink-3);
-  border-radius: 4px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-pill);
   background: var(--surface);
+  transition: background-color 120ms, border-color 120ms;
 }
 
-.slot--booked {
+.slot:hover {
+  z-index: 2;
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+/* hover details: time and status above the slot */
+.slot[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px var(--s0);
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--page);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms;
+}
+
+.slot:hover::after {
+  opacity: 1;
+}
+
+.slot--booked,
+.slot--booked:hover {
   border-color: var(--accent);
   background: var(--accent);
 }
@@ -563,7 +595,7 @@ button {
   top: -5px;
   bottom: -5px;
   left: 0;
-  background: var(--sunken);
+  background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 7px);
 }
 
 .past-key {
@@ -573,8 +605,7 @@ button {
   margin-right: 6px;
   vertical-align: -1px;
   border-radius: 3px;
-  background: var(--sunken);
-  border: 1px solid var(--line);
+  background: repeating-linear-gradient(-45deg, var(--ink-3) 0 1px, transparent 1px 4px);
 }
 
 .slot.slot--key {

@@ -133,7 +133,7 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
                         key={key}
                         className={`slot${s.is_booked ? ' slot--booked' : ''}${flashing.has(key) ? ' flash' : ''}`}
                         style={{ left: `${pos(s.time)}%`, width: `${(SLOT_MIN / span) * 100}%` }}
-                        title={`${formatTime(s.time)} · ${s.is_booked ? 'Booked' : 'Free'}`}
+                        data-tip={`${formatTime(s.time)} · ${s.is_booked ? 'Booked' : 'Free'}`}
                         aria-label={`${doc.name} ${formatTime(s.time)} ${s.is_booked ? 'booked' : 'free'}`}
                       >
                         {s.is_booked && <span className="slot__time num">{shortTime(s.time)}</span>}
