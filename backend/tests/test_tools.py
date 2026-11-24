@@ -267,6 +267,8 @@ def test_demo_bookings_are_future_and_never_the_demo_callers_number():
     assert all((a["date"], a["time"]) > (today, now) for a in appts)
     assert PHONE not in {a["phone"] for a in appts}
     assert all(len(a["phone"]) == 10 and a["phone"][0] in "6789" for a in appts)
+    assert not any(seed.looks_typed(a["phone"]) for a in appts)
+    assert seed.looks_typed("6000091644") and seed.looks_typed("8708227654") and not seed.looks_typed("9182736450")
 
 
 def test_db_path_is_absolute():

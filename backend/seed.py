@@ -29,11 +29,17 @@ DEMO_CANCEL = 0.04  # share of demo bookings that were later cancelled
 DEMO_CALLER = "9876543210"  # the number used in the demo video: never pre-booked
 
 
+def looks_typed(phone: str) -> bool:
+    """True for numbers with a run of 4 that reads as dummy: 0000, 1234, 7654."""
+    d = [int(c) for c in phone]
+    return any(len({d[i + 1] - d[i], d[i + 2] - d[i + 1], d[i + 3] - d[i + 2]}) == 1 and abs(d[i + 1] - d[i]) <= 1 for i in range(7))
+
+
 def demo_phone(rng: random.Random) -> str:
-    """A plausible Indian mobile: starts 6-9, ten digits."""
+    """A plausible Indian mobile: starts 6-9, ten digits, no dummy-looking runs."""
     while True:
         phone = rng.choice("6789") + "".join(rng.choice("0123456789") for _ in range(9))
-        if phone != DEMO_CALLER:
+        if phone != DEMO_CALLER and not looks_typed(phone):
             return phone
 
 
