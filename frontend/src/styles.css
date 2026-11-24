@@ -27,8 +27,8 @@
   --t-h2: 20px; /* panel headings */
   --t-wordmark: 22px;
   --t-number: 28px; /* confirmed phone number, Ava in the call sheet */
-  --t-figure: 52px; /* stat numbers */
-  --t-timer: 64px; /* call timer */
+  --t-figure: 60px; /* stat numbers */
+  --t-timer: 80px; /* call timer */
 
   /* space: 4px base, 8px rhythm */
   --s-1: 4px;
@@ -353,8 +353,8 @@ button {
 
 .figure {
   display: grid;
-  gap: var(--s0);
-  padding: var(--s2) var(--s3);
+  gap: var(--s1);
+  padding: 28px var(--s4) var(--s3);
 }
 
 .figure + .figure {
@@ -1163,7 +1163,7 @@ tr.flash td {
 }
 
 .hero__timer {
-  margin-top: var(--s2);
+  margin: var(--s3) 0 var(--s0);
   font: 600 var(--t-timer) / 1 var(--display);
   font-variation-settings: 'opsz' 144;
   letter-spacing: -0.02em;
