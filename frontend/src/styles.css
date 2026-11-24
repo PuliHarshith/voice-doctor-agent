@@ -235,7 +235,10 @@ button {
   border-radius: var(--r-control);
   background: var(--surface);
   font-weight: 500;
-  transition: background-color 120ms, color 120ms, border-color 120ms;
+  transition:
+    background-color 120ms,
+    color 120ms,
+    border-color 120ms;
 }
 
 .btn:hover:not(:disabled) {
@@ -294,7 +297,9 @@ button {
   font-size: var(--t-small);
   font-weight: 500;
   color: var(--ink-2);
-  transition: background-color 120ms, color 120ms;
+  transition:
+    background-color 120ms,
+    color 120ms;
 }
 
 .segmented button[aria-pressed='true'] {
@@ -806,7 +811,9 @@ button {
   border: 1.5px solid var(--green-line);
   border-radius: var(--r-pill);
   background: var(--surface);
-  transition: background-color 120ms, border-color 120ms;
+  transition:
+    background-color 120ms,
+    border-color 120ms;
 }
 
 .slot:hover {
@@ -1244,7 +1251,10 @@ tr.flash td {
 }
 
 .slot:not(.flash) {
-  transition: outline-color 350ms ease-out, background-color 120ms, border-color 120ms;
+  transition:
+    outline-color 350ms ease-out,
+    background-color 120ms,
+    border-color 120ms;
 }
 
 @keyframes blink {
@@ -1318,10 +1328,6 @@ tr.flash td {
   text-align: center;
 }
 
-
-
-
-
 .state {
   display: inline-flex;
   align-items: center;
@@ -1349,8 +1355,6 @@ tr.flash td {
 .state--connected .state__dot {
   background: var(--green-ink);
 }
-
-
 
 .phone__caller {
   min-height: 52px;
@@ -1477,9 +1481,6 @@ tr.flash td {
   font-weight: 600;
   color: var(--hero-ink);
 }
-
-
-
 
 /* Voice ribbon: two hand-drawn lines, the caller's in ink and Ava's in the accent, drawn by useCall
    from the live audio every frame. */
@@ -1638,8 +1639,6 @@ tr.flash td {
     grid-template-columns: 140px 1fr 28px;
     gap: 10px;
   }
-
-
 
   .days {
     overflow-x: auto;

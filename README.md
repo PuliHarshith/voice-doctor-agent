@@ -23,7 +23,7 @@ cd backend
 python -m venv .venv
 .venv\Scripts\activate            # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env              # then put your two keys in .env
+cp .env.example .env              # Windows cmd: copy .env.example .env; then put your two keys in .env
 python bot.py
 ```
 
@@ -52,10 +52,10 @@ The dashboard updates while you talk: the slot is stamped onto the doctor's lane
 
 ```bash
 cd backend
-.venv\Scripts\python -m pytest
+python -m pytest                  # with the .venv from step 1 active
 ```
 
-These cover parsing of spoken phone numbers, the read-back check and the three tools against a temporary database. They make no API calls.
+These cover parsing of spoken phone numbers, the read-back check and the four tools (availability, number confirmation, booking, cancelling) against a temporary database. They make no API calls.
 
 ## Configuration
 

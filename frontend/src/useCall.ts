@@ -35,7 +35,10 @@ function drawRibbon(path: SVGPathElement | null, buf: Float32Array | null) {
     const y = prev ? prev[i] + (target - prev[i]) * EASE : target
     return [(i * RIBBON_W) / POINTS, y]
   })
-  lastY.set(path, pts.map(([, y]) => y))
+  lastY.set(
+    path,
+    pts.map(([, y]) => y),
+  )
   let d = `M${pts[0][0]} ${pts[0][1].toFixed(1)}`
   for (let i = 1; i < pts.length; i++) {
     const [x0, y0] = pts[i - 1]
@@ -46,8 +49,7 @@ function drawRibbon(path: SVGPathElement | null, buf: Float32Array | null) {
 }
 
 const isMicDenied = (e: unknown) =>
-  (e instanceof DeviceError && e.type === 'permissions') ||
-  (e instanceof DOMException && e.name === 'NotAllowedError')
+  (e instanceof DeviceError && e.type === 'permissions') || (e instanceof DOMException && e.name === 'NotAllowedError')
 
 /**
  * One voice call to the Pipecat bot over SmallWebRTC.
@@ -209,5 +211,19 @@ export function useCall() {
   const bindCallerMeter = useCallback((el: SVGPathElement | null) => void (callerMeter.current = el), [])
   const bindBotMeter = useCallback((el: SVGPathElement | null) => void (botMeter.current = el), [])
 
-  return { state, error, muted, activity, connectedAt, endedAt, start, end, toggleMute, dismiss, bindBotAudio, bindCallerMeter, bindBotMeter }
+  return {
+    state,
+    error,
+    muted,
+    activity,
+    connectedAt,
+    endedAt,
+    start,
+    end,
+    toggleMute,
+    dismiss,
+    bindBotAudio,
+    bindCallerMeter,
+    bindBotMeter,
+  }
 }
