@@ -297,3 +297,15 @@ def test_confirm_in_telugu_readback():
     msgs = [{"role": "assistant", "content": "మీ నంబర్ తొమ్మిది ఏడు సున్నా మూడు సున్నా ఆరు ఐదు ఏడు ఒకటి ఐదు. సరేనా?"},
             {"role": "user", "content": "అవును"}]
     assert call(confirm, msgs, phone_number="9703065715") == {"confirmed_phone": "9703065715"}
+
+
+def test_readback_may_share_message_with_date_and_time():
+    """Live Telugu call: date/time and number read back in one message. The number sentence counts alone."""
+    session = Session()
+    confirm = make_tools(session)[0]
+    msgs = [{"role": "assistant", "content": "డాక్టర్ అయ్యర్ నవంబర్ ఇరవై ఐదో తేదీన సాయంత్రం ఐదు గంటలకు ఖాళీగా ఉన్నారు. "
+                                             "మీ ఫోన్ నంబరు తొమ్మిది ఎనిమిది మూడు నాలుగు ఐదు ఆరు ఏడు సున్నా ఒకటి రెండు. ఇది సరైనదేనా?"},
+            {"role": "user", "content": "అవును"}]
+    assert call(confirm, msgs, phone_number="9834567012") == {"confirmed_phone": "9834567012"}
+    msgs[0] = {"role": "assistant", "content": "Dr. Iyer is free at 5 PM. Your number is 9 8 3 4 5, 6 7 0 1 2. Right?"}
+    assert call(confirm, msgs, phone_number="9834567012") == {"confirmed_phone": "9834567012"}

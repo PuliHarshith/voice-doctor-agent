@@ -6,6 +6,7 @@ tool only stores it if the agent's last message read the digits back and the cal
 
 import copy
 import functools
+import re
 from dataclasses import dataclass
 from datetime import date as Date, datetime
 
@@ -57,6 +58,13 @@ def logged(tool):
                 await result_callback({"error": "Internal error, nothing was saved. Apologise and try once more."})
 
     return wrapper
+
+
+def read_back(bot_text: str, phone: str) -> bool:
+    """Some sentence of the bot's message is exactly this number: no extra or missing digits.
+    Per sentence, so a date or time said in the same message ("...at five PM. Your number is...")
+    doesn't count against it, while a read-back with an extra digit is still rejected."""
+    return any(normalise(s) == phone for s in re.split(r"[.?!।\n]+", bot_text))
 
 
 def is_yes(text: str) -> bool:
@@ -143,7 +151,7 @@ def make_tools(session: Session) -> list:
         bot_text, user_text = last_readback_and_reply(params.context.get_messages())
         if phone is None:
             result = {"error": f"'{phone_number}' is not a valid 10-digit phone number. Ask the caller again."}
-        elif normalise(bot_text) != phone:  # exactly this number was read back: no extra or missing digits
+        elif not read_back(bot_text, phone):
             result = {"error": "You have not read this exact number back yet. Read it digit by digit "
                                "and ask the caller to confirm."}
         elif not is_yes(user_text):
