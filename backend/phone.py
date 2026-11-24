@@ -33,3 +33,12 @@ def normalise(text: str) -> str | None:
     elif len(digits) == 11 and digits.startswith("0"):
         digits = digits[1:]
     return digits if len(digits) == 10 else None
+
+
+NUMBER_WORDS = ("number", "नंबर", "नम्बर", "నంబర్")
+
+
+def mentions_phone_number(text: str) -> bool:
+    """Bot line asks for or reads back a phone number, so the caller's next turn will be digits."""
+    t = text.lower()
+    return any(w in t for w in NUMBER_WORDS) or len(spoken_to_digits(t)) >= 7

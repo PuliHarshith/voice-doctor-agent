@@ -76,3 +76,16 @@ def test_spoken_fragment_9876():
 ])
 def test_normalise_audit_cases(spoken, expected):
     assert normalise(spoken) == expected
+
+
+@pytest.mark.parametrize("bot_line, expected", [
+    ("Could you tell me your ten digit phone number?", True),
+    ("That's 9 8 7 6 5, 4 3 2 1 0. Is that right?", True),
+    ("कृपया अपना फ़ोन नंबर बताइए।", True),
+    ("దయచేసి మీ ఫోన్ నంబర్ చెప్పండి.", True),
+    ("Dr. Rao has openings at ten AM on Wednesday the 25th.", False),
+    ("You are booked with Dr. Iyer at three PM.", False),
+])
+def test_mentions_phone_number(bot_line, expected):
+    from phone import mentions_phone_number
+    assert mentions_phone_number(bot_line) is expected

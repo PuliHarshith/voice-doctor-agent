@@ -39,9 +39,16 @@ from pipecat.turns.user_turn_strategies import UserTurnStrategies
 import db
 from api import router as api_router
 from events import bus
+from phone import mentions_phone_number
 from seed import ensure_seeded
 from tools import Session, make_tools
+from latency import LatencyLogger
 from transcript import AssistantTranscript, UserTranscript
+
+# Silence before a phrase is final. Long while a phone number is expected (callers pause between digit
+# groups and a short pause would end the turn mid-number), short otherwise (~0.5s faster replies).
+VAD_STOP_SECS = float(os.getenv("VAD_STOP_SECS") or 1.0)
+VAD_FAST_STOP_SECS = float(os.getenv("VAD_FAST_STOP_SECS") or 0.5)
 
 SYSTEM_PROMPT = """You are Ava, the phone receptionist at Sunrise Clinic.
 You help callers check doctor availability, book appointments and cancel appointments.
@@ -111,6 +118,13 @@ async def bot(runner_args: RunnerArguments):
         stream_idle_timeout_secs=8.0,
     )
 
+    vad = SileroVADAnalyzer(params=VADParams(stop_secs=VAD_FAST_STOP_SECS))
+
+    def adapt_vad(bot_line: str):
+        want = VAD_STOP_SECS if mentions_phone_number(bot_line) else VAD_FAST_STOP_SECS
+        if vad.params.stop_secs != want:  # set_params resets VAD state, so only on a real change
+            vad.set_params(vad.params.model_copy(update={"stop_secs": want}))
+
     # Direct-function tools: Pipecat reads their schemas and registers them with the LLM.
     context = LLMContext(tools=make_tools(Session()))
     aggregators = LLMContextAggregatorPair(
@@ -119,9 +133,7 @@ async def bot(runner_args: RunnerArguments):
             # Each VAD stop makes ElevenLabs finalise the audio so far and lets the turn end. Pipecat's 0.2s
             # default (and 0.6s) split phone numbers at the pauses between digit groups: "9700." / "306." /
             # "3715" arrived as three turns. 1.0s keeps a number in one piece; costs ~0.4s per reply.
-            vad_analyzer=SileroVADAnalyzer(
-                params=VADParams(stop_secs=float(os.getenv("VAD_STOP_SECS") or 1.0))
-            ),
+            vad_analyzer=vad,
             # Smart Turn decides when the caller has finished. If it thinks they haven't, it waits
             # this long in silence before answering anyway (default 3s felt dead on the line).
             # Not lower: callers pause between digit groups when giving a phone number.
@@ -142,7 +154,7 @@ async def bot(runner_args: RunnerArguments):
             UserTranscript(),  # user text after STT
             aggregators.user(),
             llm,
-            AssistantTranscript(),  # assistant text before TTS
+            AssistantTranscript(on_line=adapt_vad),  # assistant text before TTS
             tts,
             transport.output(),
             aggregators.assistant(),
@@ -152,6 +164,7 @@ async def bot(runner_args: RunnerArguments):
     task = PipelineTask(
         pipeline,
         params=PipelineParams(enable_metrics=True, enable_usage_metrics=True),
+        observers=[LatencyLogger(lambda: vad.params.stop_secs)],
     )
 
     last_recovery = 0.0

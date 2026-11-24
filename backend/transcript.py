@@ -33,9 +33,10 @@ class UserTranscript(FrameProcessor):
 class AssistantTranscript(FrameProcessor):
     """Place right before TTS. Collects streamed LLM tokens into one line per response."""
 
-    def __init__(self):
+    def __init__(self, on_line=None):
         super().__init__()
         self._text = ""
+        self._on_line = on_line  # called with each finished bot line
 
     async def process_frame(self, frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
@@ -50,5 +51,7 @@ class AssistantTranscript(FrameProcessor):
             if self._text.strip():
                 logger.info(f"BOT said: {self._text.strip()}")
                 bus.publish("transcript", role="assistant", text=self._text.strip(), final=True)
+                if self._on_line:
+                    self._on_line(self._text.strip())
             self._text = ""
         await self.push_frame(frame, direction)
