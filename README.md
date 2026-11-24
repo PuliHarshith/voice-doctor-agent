@@ -7,7 +7,7 @@ You talk to Ava, a receptionist, from your browser. She can check a doctor's fre
 - **Text to speech:** ElevenLabs Flash v2.5, voice "Sarah"
 - **LLM:** Google Gemini, `gemini-3.5-flash-lite` (free tier from Google AI Studio)
 - **Turn detection:** Silero VAD plus Pipecat's Smart Turn v3 model, both running locally
-- **Data:** SQLite with mock doctors and slots, seeded automatically
+- **Data:** SQLite with six mock doctors, a week of slots and a demo week of bookings, seeded automatically
 - **Dashboard:** React 19, Vite and TypeScript, in `frontend/`
 
 How the parts fit together is in [PIPELINE.md](PIPELINE.md).
@@ -27,7 +27,7 @@ cp .env.example .env              # then put your two keys in .env
 python bot.py
 ```
 
-The first start creates `clinic.db` with six doctors and a week of slots. To wipe it and start again, run `python seed.py`.
+The first start creates `clinic.db` with six doctors, a week of slots and a realistic spread of demo bookings. To reset the demo data at any time, run `python seed.py` (the same week every time; the demo caller's number, 98765 43210, is never pre-booked).
 
 ### 2. Dashboard (port 5173)
 
@@ -46,7 +46,7 @@ Open http://localhost:5173 and click **Try Call**, then allow the microphone. Vi
 > "Two thirty is fine."
 > "Actually, cancel that appointment."
 
-The dashboard updates while you talk: the slot fills in, the booking appears under Appointments, and a cancelled booking stays in the list, struck through.
+The dashboard updates while you talk: the slot is stamped onto the doctor's lane, the week chart and doctor load move, the booking appears at the top of Appointments, and a cancelled booking stays in the list, struck through. The call sheet shows the confirmed number digit by digit and the last reply time.
 
 ## Tests
 

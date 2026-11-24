@@ -63,6 +63,7 @@ The pipeline and the tools publish events to a small in-process bus:
 
 - `transcript`
 - `phone_confirmed`
+- `reply_timing` (seconds from the end of your speech to Ava's first audio, from `latency.py`)
 - `appointment_booked` and `appointment_cancelled`
 - `slots_changed`
 - `call_status`

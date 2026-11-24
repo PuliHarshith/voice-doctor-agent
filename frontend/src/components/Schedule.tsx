@@ -97,8 +97,12 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
             <div className={`lane${collapsed ? ' lane--collapsed' : ''}`}>
               {collapsed && <span className="earlier earlier--label">Earlier</span>}
               <div className="timeline__track">
-                {hours.map((h) => (
-                  <span key={h} className="tick-label num" style={{ left: `${pos(h * 60)}%` }}>
+                {hours.map((h, i) => (
+                  <span
+                    key={h}
+                    className={`tick-label num${i % 3 ? ' tick-label--minor' : ''}`}
+                    style={{ left: `${pos(h * 60)}%` }}
+                  >
                     {hourLabel(h)}
                   </span>
                 ))}

@@ -25,7 +25,7 @@ DAYS = 7  # every day: 9:00-12:30 and/or 2:00-5:30 per doctor, lunch 1-2 PM
 # slot is booked with this probability, by days from today; fixed seed, so every reset is the same week.
 DEMO_SEED = 7
 DEMO_FILL = [0.45, 0.38, 0.3, 0.24, 0.18, 0.14, 0.1]
-DEMO_CANCEL = 0.06  # share of demo bookings that were later cancelled
+DEMO_CANCEL = 0.04  # share of demo bookings that were later cancelled
 DEMO_CALLER = "9876543210"  # the number used in the demo video: never pre-booked
 
 
@@ -61,18 +61,21 @@ def seed(conn) -> None:
 def add_demo_bookings(conn) -> int:
     """Book a realistic share of upcoming slots (and cancel a few). Returns how many stay booked."""
     rng = random.Random(DEMO_SEED)
-    booked = 0
+    picks = []
     for d in db.all_doctors(conn):
         for s in db.free_slots(conn, d["id"]):  # upcoming only, so demo bookings are never in the past
             offset = (date.fromisoformat(s["date"]) - date.today()).days
-            if rng.random() >= DEMO_FILL[min(offset, len(DEMO_FILL) - 1)]:
-                continue
-            phone = demo_phone(rng)
-            appt = db.book(conn, phone, d["id"], s["date"], s["time"])
-            if appt and rng.random() < DEMO_CANCEL:
-                db.cancel(conn, appt, phone)
-            elif appt:
-                booked += 1
+            if rng.random() < DEMO_FILL[min(offset, len(DEMO_FILL) - 1)]:
+                picks.append((d["id"], s["date"], s["time"]))
+    rng.shuffle(picks)  # booked in a mixed order, so the newest-first list reads like a real day's log
+    booked = 0
+    for doctor_id, day, time in picks:
+        phone = demo_phone(rng)
+        appt = db.book(conn, phone, doctor_id, day, time)
+        if appt and rng.random() < DEMO_CANCEL:
+            db.cancel(conn, appt, phone)
+        elif appt:
+            booked += 1
     return booked
 
 

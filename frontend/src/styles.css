@@ -1708,4 +1708,9 @@ tr.flash td {
   td .only-narrow {
     display: block;
   }
+
+  /* a phone-wide axis fits every third hour: 9 AM, 12 PM, 3 PM, 6 PM */
+  .tick-label--minor {
+    display: none;
+  }
 }

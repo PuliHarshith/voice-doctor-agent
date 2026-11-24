@@ -14,11 +14,7 @@ export function Figures({ doctors, appointments }: { doctors: Doctor[]; appointm
   const figures = [
     ['Booked today', booked.filter((a) => a.date === d).length, `${booked.filter((a) => a.date >= d).length} upcoming`],
     ['Free slots today', todaySlots.filter((s) => !s.is_booked).length, `of ${todaySlots.length} remaining`],
-    [
-      'Cancelled this week',
-      thisWeek.filter((a) => a.status === 'cancelled').length,
-      `of ${thisWeek.length} bookings this week`,
-    ],
+    ['Cancelled this week', thisWeek.filter((a) => a.status === 'cancelled').length, `of ${thisWeek.length} this week`],
   ] as const
 
   return (

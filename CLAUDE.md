@@ -54,50 +54,47 @@ A voice agent that a caller talks to in the browser. It can check a doctor's ava
 - Core requirements come first. Bonus work doesn't make up for missing core.
 
 ## Design rules (frontend): "operations console"
-Original design, written from scratch: no UI kit, no animation library, no template code, markup, class
-names, icons or assets. Information density that stays readable. All tokens are CSS variables in
-`frontend/src/styles.css`; use them, never raw values.
+Original design, written from scratch: no UI kit, no animation library, no template code or assets. All
+tokens are CSS variables in `frontend/src/styles.css`; use them, never raw values.
 
-- Layout (1440px): slim top bar (wordmark, live clock, status pill, theme toggle, Try Call). Row 1: three
-  plain figures (Booked today, Free slots, Cancelled today; all counted for today's date). Row 2: doctor
-  day lanes with the slot timeline. Row 3: Transcript (chat widget, large confirmed number on top) beside
-  Appointments (table, newest first). No sidebar or menus.
-- Call sheet: on wide screens docked on the right while the board makes room (nothing is covered, so lane
-  stamps and row flashes stay visible); on phones a full-screen overlay. Holds state, timer, read-back,
-  Listening/Thinking/Speaking, voice ribbon, confirmation card, chat, Mute, End call.
-- 390px: figures stay three across; lanes stack name over track; the table drops Doctor and moves the
-  time under the date; the clock and status pill hide.
-- Themes: Paper (light, default) and Ink (dark) via `html[data-theme]`, toggled in the top bar, saved in
-  localStorage inside try/catch, applied before first paint by a script in index.html.
-- Colour tokens (Paper / Ink):
-  - `--page` #F5F2EC / #12110F; `--surface` #FFFFFF / #1A1917; `--sunken` #F0ECE4 / #24221F
-  - `--ink` #1B1A17 / #EEEAE2; `--ink-2` ink at 64% / 66% (secondary text); `--ink-3` 28% / 24% (idle marks, never text)
-  - `--line` #E3DED4 / #2D2B27
-  - ONE accent `--accent` deep teal #0F6E6A / #4FB3A9, `--on-accent` #FFFFFF / #0C1413,
-    `--accent-wash` accent at 10% / 14% (Booked pill, Ava's bubbles, row flash)
-  - `--muted-wash` #ECE8E0 / #262420 (Cancelled pill); `--scrim` ink 32% / black 50% (phone overlay)
-- Type: `--display` Fraunces (650-750, optical size set per use) for the wordmark, headings, figures, day
-  numbers and the read-back; `--sans` Inter for UI. Sizes: `--t-xs` 11, `--t-sm` 12, `--t-md` 14 (body),
-  `--t-lg` 16, `--t-h2` 22, `--t-wordmark` 22, `--t-number` 30, `--t-figure` 40 px (smaller on phones).
-  Tabular numerals for every number, time and phone number.
-- Space: `--s-1` 4, `--s0` 8, `--s1` 12, `--s2` 16, `--s3` 24, `--s4` 32 px.
-- Shape: `--r-box` 12, `--r-sheet` 24, `--r-control` 8, `--r-bubble` 14, `--r-pill` 999 px. 1px hairlines,
-  no shadows. Frame: `--bar-h` 56, `--sheet-w` 380, `--chat-w` 400 px.
-- Signature moments: a "now" marker crossing today's lanes; a booked slot stamped onto its lane (scale in,
-  no overshoot); the read-back typing the confirmed number digit by digit, then drawing a check mark; a
-  hand-drawn voice ribbon (SVG path from the AnalyserNode waveform; caller in ink, Ava in teal).
-- Lanes: one fixed axis for every day (clinic opening to closing), so slots keep their real width; on
-  today, hours already gone are a flat `--sunken` tint with the "now" marker at its edge. Booked slots
-  show their time ("10:30") except on phones. Each doctor has an initials monogram (`--sunken` circle).
-- Figures carry one line of context each ("6 upcoming", "of 8 left today", "1 in all").
-- Theme control: a two-segment Paper | Ink switch; the active segment is ink on page.
-- Favicon: teal tile with a serif "S" (inline SVG in index.html).
-- Icons: only call, mute and end call; 1.5px stroke, drawn in `components/Icon.tsx`.
-- Banned: sidebars with menu groups, icon-in-circle tiles, charts, greetings, stock illustrations,
-  gradients, emojis, marketing copy. Copy: Try Call, Transcript, Doctors, Appointments, End call,
-  Booked, Cancelled, Free.
-- Motion: short fades (200ms or less), the stamp and row flash, the ribbon; all of it honours
-  prefers-reduced-motion (the read-back shows the full number at once). Visible 2px accent focus ring.
+- Layout (1440px): slim top bar (serif wordmark, clock, status pill, Paper | Ink switch, Try Call). Then:
+  three stat figures; two charts (This week, Doctor load); the Doctors timeline; Transcript beside
+  Appointments; a footer line "Pipecat · ElevenLabs · Gemini". No sidebar.
+- Call sheet: docked right on wide screens (the board makes room, nothing covered; the board hides its own
+  transcript during a call), full-screen on phones. Its hero is the only gradient: deep green
+  (#0B3A35) with SVG grain, an 80px timer, the voice ribbon and "reply 0.0 s".
+- 390px: everything stacks; figures stay three across; charts stack; the axis shows every third hour;
+  the table hides Doctor and moves the time under the date; clock and status pill hide.
+- Themes: Paper (default) and Ink via `html[data-theme]`, saved in localStorage inside try/catch,
+  applied before first paint by index.html.
+- Colour discipline:
+  - `--accent` deep teal (#0F6E6A / #4FB3A9) ONLY for Try Call, booked slots (and the Booked series in the
+    week chart), the "now" needle and Ava's voice.
+  - `--green-ink` (#134E44 / #9FD6CB) for headings, key numbers, free-slot outlines, the Booked pill,
+    doctor-load bars, focus rings and highlights; `--green-wash` / `--green-line` are its tints.
+  - Neutrals: `--page` #F5F2EC / #12110F, `--surface` #FFF / #1A1917, `--sunken`, `--ink` #1B1A17 /
+    #EEEAE2, `--ink-2` (64% / 66%, secondary text), `--ink-label` (74%, small caps), `--ink-3` (marks only,
+    never text), `--line`, `--line-soft` (row dividers), `--muted-wash` (Cancelled pill), `--chart-free`.
+  - Every text pair measured >= 4.5:1 in both themes (lowest 4.84, the Cancelled pill).
+- Type: four steps, serif (Fraunces) for headings and numbers, sans (Inter) for UI:
+  `--t-display` 60 (stat numbers), `--t-heading` 22 (headings, wordmark, Ava, confirmed number),
+  `--t-body` 14, `--t-label` 11 (small caps, the smallest text anywhere); plus `--t-small` 12 (secondary
+  lines), `--t-day` 18 (day tabs), `--t-timer` 80. Tabular numerals on every number, time and phone number.
+- One time format everywhere: 12-hour with AM/PM ("5:30 PM", axis "9 AM").
+- Space `--s-1` 4 to `--s4` 32 on a 4/8px rhythm. Radii: `--r-box` 12, `--r-sheet` 24, `--r-control` 8,
+  `--r-bubble` 14, `--r-pill`. Hairlines, no shadows.
+- Timeline: one axis for the clinic day; on today the passed hours collapse into a hatched "Earlier"
+  strip; free = green-ink outlined chip, booked = solid accent chip with its time; hover shows time and
+  status; opens on the next day with free slots when today has fewer than 4 left; days with nothing free
+  are disabled.
+- Charts (real data only): This week = stacked columns per day (booked accent, free `--chart-free`, 24px
+  max, 2px gap, rounded data end); Doctor load = share of each doctor's week booked, one hue. Hover
+  tooltips, legend for two series, values in text colours.
+- Motion: every one-shot animation <= 350ms (fades, stamp, wash in 150ms / out 350ms, read-back digits,
+  check mark, chart transitions); two ambient loops (ringing dot, empty-state ruler). All guarded by
+  prefers-reduced-motion (loops play once, the ribbon stays flat, scrolling is instant).
+- Copy: Try Call, Transcript, Doctors, Appointments, End call, Booked, Cancelled, Free; empty transcript
+  "Press Try Call to start".
 - Touch: controls at least 44px tall on touch screens.
 
 ## Working rules
