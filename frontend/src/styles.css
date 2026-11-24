@@ -1063,6 +1063,7 @@ tr.flash td {
 
   .row__who {
     display: grid;
+    gap: 0;
   }
 
   .days {
@@ -1082,12 +1083,28 @@ tr.flash td {
     padding: 0 var(--s2);
   }
 
-  .clock {
-    display: none; /* the phone's own status bar shows the time */
+  /* the phone's own status bar shows the time; the full-screen sheet shows the call state */
+  .clock,
+  .topbar .pill {
+    display: none;
   }
 
   .wordmark {
     margin-right: auto;
+    white-space: nowrap;
+  }
+
+  .topbar .btn {
+    padding: 0 var(--s1);
+    white-space: nowrap;
+  }
+
+  .theme-toggle {
+    min-width: 0;
+  }
+
+  .empty {
+    padding: 0 var(--s2) var(--s2);
   }
 
   .board {
