@@ -170,6 +170,26 @@ button {
   color: var(--ink-2);
 }
 
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s0);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+}
+
+.live__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+
+.live--on .live__dot {
+  background: var(--green-ink);
+  box-shadow: 0 0 0 3px var(--green-wash);
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -338,6 +358,26 @@ button {
   font: 600 var(--t-heading) / 1.2 var(--display);
   font-variation-settings: 'opsz' 36;
   letter-spacing: -0.005em;
+}
+
+.search {
+  margin-left: auto;
+  flex: 1;
+  max-width: 240px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 var(--s1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--sunken);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.search::placeholder {
+  color: var(--ink-2);
 }
 
 .section-meta {
@@ -520,7 +560,7 @@ button {
 
 .figures {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-box);
@@ -1619,6 +1659,7 @@ tr.flash td {
 
   /* the phone's own status bar shows the time; the full-screen sheet shows the call state */
   .clock,
+  .live,
   .topbar .pill {
     display: none;
   }
@@ -1678,6 +1719,19 @@ tr.flash td {
     display: grid;
     gap: var(--s-1);
     padding: var(--s1);
+  }
+
+  /* four figures sit two by two on a phone */
+  .figures {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .figure:nth-child(3) {
+    border-left: 0;
+  }
+
+  .figure:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
   }
 
   .timeline__axis,

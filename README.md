@@ -46,7 +46,7 @@ Open http://localhost:5173 and click **Try Call**, then allow the microphone. Vi
 > "Two thirty is fine."
 > "Actually, cancel that appointment."
 
-The dashboard updates while you talk: the slot is stamped onto the doctor's lane, the week chart and doctor load move, the booking appears at the top of Appointments, and a cancelled booking stays in the list, struck through. The call sheet shows the confirmed number digit by digit and the last reply time.
+The dashboard updates while you talk: the slot is stamped onto the doctor's lane, the week chart and doctor load move, the booking appears at the top of Appointments, and a cancelled booking stays in the list, struck through. The call sheet shows the confirmed number digit by digit and the last reply time. The search box above Appointments finds a patient's bookings by phone number (spaces optional) or by doctor, and the top row counts down to the next booked visit.
 
 ## Tests
 

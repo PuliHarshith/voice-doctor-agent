@@ -144,6 +144,13 @@ export default function App() {
       <header className="topbar">
         <h1 className="wordmark">Sunrise Clinic</h1>
         <Clock />
+        <span
+          className={`live${link === 'live' ? ' live--on' : ''}`}
+          title="Updates from the agent arrive here as they happen"
+        >
+          <span className="live__dot" />
+          {link === 'live' ? 'Live' : 'Offline'}
+        </span>
         <span className={`pill pill--${call.state}`}>
           <span className="pill__dot" />
           {STATE_LABEL[call.state]}

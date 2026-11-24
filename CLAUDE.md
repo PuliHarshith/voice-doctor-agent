@@ -57,13 +57,13 @@ A voice agent that a caller talks to in the browser. It can check a doctor's ava
 Original design, written from scratch: no UI kit, no animation library, no template code or assets. All
 tokens are CSS variables in `frontend/src/styles.css`; use them, never raw values.
 
-- Layout (1440px): slim top bar (serif wordmark, clock, status pill, Paper | Ink switch, Try Call). Then:
-  three stat figures; two charts (This week, Doctor load); the Doctors timeline; Transcript beside
+- Layout (1440px): slim top bar (serif wordmark, clock, Live/Offline marker for the event stream, status pill, Paper | Ink switch, Try Call). Then:
+  four stat figures (the fourth is the next booked visit with a live countdown); two charts (This week, Doctor load); the Doctors timeline; Transcript beside
   Appointments; a footer line "Pipecat · ElevenLabs · Gemini". No sidebar.
 - Call sheet: docked right on wide screens (the board makes room, nothing covered; the board hides its own
   transcript during a call), full-screen on phones. Its hero is the only gradient: deep green
   (#0B3A35) with SVG grain, an 80px timer, the voice ribbon and "reply 0.0 s".
-- 390px: everything stacks; figures stay three across; charts stack; the axis shows every third hour;
+- 390px: everything stacks; figures sit two by two; Appointments has a search box (phone digits or doctor); charts stack; the axis shows every third hour;
   the table hides Doctor and moves the time under the date; clock and status pill hide.
 - Themes: Paper (default) and Ink via `html[data-theme]`, saved in localStorage inside try/catch,
   applied before first paint by index.html.
