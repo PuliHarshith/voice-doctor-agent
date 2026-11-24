@@ -79,7 +79,8 @@ Never book or cancel without a confirmed number, and never invent or guess digit
 
 Booking: use check_doctor_availability, offer two or three times, and once the caller picks one,
 call book_appointment with the date as YYYY-MM-DD. Then repeat the doctor, day and time.
-Cancelling: call cancel_appointment; if several come back, ask which one.
+Cancelling: call cancel_appointment to list the caller's appointments, say which one you will cancel
+(doctor, day, time) and ask "Shall I cancel it?"; only after a clear yes call it again with that appointment_id.
 Checking availability does not need a phone number.
 If a tool returns an error, explain it simply and offer the next step. Never claim something was
 booked or cancelled unless the tool said so."""

@@ -126,8 +126,10 @@ def test_book_validation(tools):
 
 def test_cancel_single_and_frees_slot(tools):
     confirmed(tools)
-    call(tools.book, doctor="Iyer", date=TOMORROW, time="2:00 PM")
-    r = call(tools.cancel)
+    a = call(tools.book, doctor="Iyer", date=TOMORROW, time="2:00 PM")["appointment_id"]
+    r = call(tools.cancel)  # without an id it only lists: the caller confirms which one first
+    assert "cancelled" not in r and [x["appointment_id"] for x in r["appointments"]] == [a]
+    r = call(tools.cancel, appointment_id=a)
     assert r["cancelled"] and r["doctor"] == "Dr. Priya Iyer"
     assert "2 PM" in call(tools.check, doctor="Iyer", date=TOMORROW)["availability"][0]["available_times"]
     assert "No upcoming" in call(tools.cancel)["error"]
@@ -165,7 +167,7 @@ def test_cancel_keeps_the_row_as_cancelled(tools):
     import db
     confirmed(tools)
     appt = call(tools.book, doctor="Iyer", date=TOMORROW, time="2 PM")["appointment_id"]
-    call(tools.cancel)
+    call(tools.cancel, appointment_id=appt)
     with db.connect() as conn:
         assert db.get_appointment(conn, appt)["status"] == "cancelled"
 
@@ -180,7 +182,9 @@ def test_book_and_cancel_publish_events_after_the_write(tools):
         assert booked["type"] == "appointment_booked" and booked["appointment"]["id"] == appt
         assert booked["appointment"]["status"] == "booked"  # row already exists in the DB
         assert slots["type"] == "slots_changed" and slots["date"] == TOMORROW
-        call(tools.cancel)
+        call(tools.cancel)  # listing only: no events
+        assert q.empty()
+        call(tools.cancel, appointment_id=appt)
         assert q.get_nowait()["appointment"]["status"] == "cancelled"
         assert q.get_nowait()["type"] == "slots_changed"
         call(tools.book, doctor="Iyer", date=TOMORROW, time="3 AM")  # failed booking: no events

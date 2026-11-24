@@ -240,11 +240,12 @@ def make_tools(session: Session) -> list:
             conn.close()
 
     async def cancel_appointment(params: FunctionCallParams, appointment_id: int | None = None):
-        """Cancel the caller's upcoming appointment, found by their confirmed phone number.
-        If they have several, this returns the list; ask which one, then call again with its id.
+        """Cancel one of the caller's upcoming appointments, found by their confirmed phone number.
+        First call it without an id: it only lists their appointments. Name the one to cancel (doctor,
+        day, time), ask the caller to confirm, and after a clear yes call again with its id.
 
         Args:
-            appointment_id: Which appointment to cancel. Omit if the caller has only one.
+            appointment_id: The appointment the caller confirmed. Omit to list their appointments.
         """
         if not session.phone:
             return await params.result_callback({"error": "Phone number not confirmed yet. Ask for it, read it "
@@ -256,11 +257,10 @@ def make_tools(session: Session) -> list:
                        "day": day_name(a["date"]), "time": speak_time(a["time"])} for a in upcoming]
             if not upcoming:
                 return await params.result_callback({"error": "No upcoming appointments for this phone number."})
-            if appointment_id is None:
-                if len(upcoming) > 1:
-                    return await params.result_callback({"error": "Several appointments found. Ask which one.",
-                                                         "appointments": listed})
-                appointment_id = upcoming[0]["id"]
+            if appointment_id is None:  # never cancel on the first call: the caller confirms which one first
+                return await params.result_callback({
+                    "appointments": listed, "next": "Nothing is cancelled yet. Name the appointment (or ask which "
+                    "one, if several), get a clear yes, then call cancel_appointment with its appointment_id."})
             match = next((a for a in listed if a["appointment_id"] == appointment_id), None)
             if match is None or not db.cancel(conn, appointment_id, session.phone):
                 return await params.result_callback({"error": f"No upcoming appointment {appointment_id} for this "
