@@ -25,7 +25,11 @@ const shortTime = (hhmm: string) => formatTime(hhmm).replace(/\s?[AP]M$/, '')
 
 export function Schedule({ doctors, day, onDay, flashing }: Props) {
   const days = [...new Set(doctors.flatMap((d) => d.slots.map((s) => s.date)))].sort()
-  const active = day && days.includes(day) ? day : days[0]
+  // Until the user picks a day: today, unless fewer than 3 slots are left, then the next day with free slots.
+  const freeOn = (d: string) =>
+    doctors.reduce((n, doc) => n + doc.slots.filter((s) => s.date === d && !s.is_booked).length, 0)
+  const opening = freeOn(today()) >= 3 ? today() : (days.find((d) => d > today() && freeOn(d) > 0) ?? days[0])
+  const active = day && days.includes(day) ? day : opening
 
   // One fixed axis for every day (opening to closing across the whole week), so a slot always has
   // its real width and late in the day the lanes don't stretch two slots across the screen.

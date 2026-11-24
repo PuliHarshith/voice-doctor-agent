@@ -258,6 +258,17 @@ def test_startup_check_seeds_empty_db_and_tops_up_old_slots(tmp_path, monkeypatc
     assert db.free_slots(conn, 1, TOMORROW)
 
 
+def test_demo_bookings_are_future_and_never_the_demo_callers_number():
+    conn = db.connect()
+    n = seed.add_demo_bookings(conn)
+    appts = db.all_appointments(conn)
+    assert n == len(seed.DEMO_BOOKINGS) and len(appts) == n + 1
+    today, now = db.now_local()
+    assert all((a["date"], a["time"]) > (today, now) for a in appts)
+    assert PHONE not in {a["phone"] for a in appts}
+    assert sum(a["status"] == "cancelled" for a in appts) == 1
+
+
 def test_db_path_is_absolute():
     import importlib, os
     assert os.path.isabs(importlib.reload(db).DB_PATH)

@@ -1,4 +1,5 @@
-"""Mock doctors and slots. `python seed.py` resets everything; the bot calls ensure_seeded() at startup."""
+"""Mock doctors and slots. `python seed.py` resets the demo data (doctors, a week of slots and a few
+bookings); the bot calls ensure_seeded() at startup."""
 
 from datetime import date, timedelta
 
@@ -18,6 +19,19 @@ DOCTORS = [
     ("Dr. Arjun Nair", "ENT Specialist", EVENING),
 ]
 DAYS = 7
+
+# A few bookings so the timeline looks lived in: (doctor, nth free upcoming slot, phone). Placed relative to
+# now, so they are always in the future. None uses the demo caller's number (98765 43210).
+DEMO_BOOKINGS = [
+    ("Dr. Ananya Sharma", 0, "9811122233"),
+    ("Dr. Ananya Sharma", 3, "9822233344"),
+    ("Dr. Rohan Mehta", 2, "9833344455"),
+    ("Dr. Priya Iyer", 1, "9844455566"),
+    ("Dr. Sneha Kapoor", 5, "9855566677"),
+    ("Dr. Arjun Nair", 4, "9866677788"),
+    ("Dr. Vikram Rao", 9, "9877788899"),
+]
+DEMO_CANCELLED = ("Dr. Priya Iyer", 6, "9888899900")
 
 
 def add_upcoming_slots(conn) -> None:
@@ -41,10 +55,32 @@ def seed(conn) -> None:
     add_upcoming_slots(conn)
 
 
+def add_demo_bookings(conn) -> int:
+    """Book DEMO_BOOKINGS (and one cancelled) on upcoming free slots. Returns how many were booked."""
+    ids = {d["name"]: d["id"] for d in db.all_doctors(conn)}
+    booked = 0
+    for name, nth, phone in DEMO_BOOKINGS + [DEMO_CANCELLED]:
+        free = db.free_slots(conn, ids[name])
+        if nth >= len(free):
+            continue  # late in the week: fewer slots left than the plan expects
+        s = free[nth]
+        appt = db.book(conn, phone, ids[name], s["date"], s["time"])
+        if appt and (name, nth, phone) == DEMO_CANCELLED:
+            db.cancel(conn, appt, phone)
+        elif appt:
+            booked += 1
+    return booked
+
+
+def reset_demo(conn) -> int:
+    seed(conn)
+    return add_demo_bookings(conn)
+
+
 def ensure_seeded(conn) -> None:
     """Startup check: create + seed an empty DB, and top up slots so a DB seeded days ago still has a week."""
     if not db.all_doctors(conn):
-        seed(conn)
+        reset_demo(conn)
     else:
         add_upcoming_slots(conn)
     doctors = len(db.all_doctors(conn))
@@ -55,5 +91,5 @@ def ensure_seeded(conn) -> None:
 
 
 if __name__ == "__main__":
-    seed(db.connect())
-    print(f"Seeded {len(DOCTORS)} doctors with {DAYS} days of slots into {db.DB_PATH}")
+    n = reset_demo(db.connect())
+    print(f"Demo data reset: {len(DOCTORS)} doctors, {DAYS} days of slots, {n} bookings + 1 cancelled, in {db.DB_PATH}")
