@@ -60,6 +60,9 @@ tokens are CSS variables in `frontend/src/styles.css`; use them, never raw value
 - Layout (1440px): slim top bar (serif wordmark, clock, Live/Offline marker for the event stream, status pill, Paper | Ink switch, Try Call). Then:
   four stat figures (the fourth is the next booked visit with a live countdown); two charts (This week, Doctor load); the Doctors timeline; Transcript beside
   Appointments; a footer line "Pipecat · ElevenLabs · Gemini". No sidebar.
+- Background: a faint dot grid (`--dot`, 16px apart) on a fixed canvas behind the board, visible in the
+  24px gutters; dots within 170px of the mouse grow and take `--green-ink`. Redraws only on pointer
+  movement; static under reduced motion and on touch.
 - Call sheet: docked right on wide screens (the board makes room, nothing covered; the board hides its own
   transcript during a call), full-screen on phones. Its hero is the only gradient: deep green
   (#0B3A35) with SVG grain, an 80px timer, the voice ribbon and "reply 0.0 s".

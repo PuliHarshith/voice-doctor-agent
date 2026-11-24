@@ -3,6 +3,7 @@ import { apptKey, getJSON, slotKey, type Appointment, type Doctor, type ServerEv
 import { useCall } from './useCall'
 import { useEvents } from './useEvents'
 import { Clock } from './components/Clock'
+import { DotGrid } from './components/DotGrid'
 import { Figures } from './components/Figures'
 import { Charts } from './components/Charts'
 import { Phone } from './components/Phone'
@@ -141,6 +142,7 @@ export default function App() {
 
   return (
     <div className={`app${call.state === 'idle' ? '' : ' app--sheet'}`}>
+      <DotGrid />
       <header className="topbar">
         <h1 className="wordmark">Sunrise Clinic</h1>
         <Clock />
