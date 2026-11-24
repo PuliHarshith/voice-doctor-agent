@@ -1,5 +1,6 @@
 import { apptKey, type Appointment } from '../api'
 import { formatDate, formatPhone, formatTime } from '../format'
+import { Empty } from './Empty'
 
 export function Ledger({ appointments, flashing }: { appointments: Appointment[]; flashing: Set<string> }) {
   const live = appointments.filter((a) => a.status === 'booked').length
@@ -12,7 +13,7 @@ export function Ledger({ appointments, flashing }: { appointments: Appointment[]
       </header>
 
       {appointments.length === 0 ? (
-        <p className="empty">No appointments yet.</p>
+        <Empty>No appointments yet.</Empty>
       ) : (
         <div className="ledger__scroll">
           <table>

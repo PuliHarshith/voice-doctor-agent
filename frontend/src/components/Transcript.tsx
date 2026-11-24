@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { ReadBack } from './ReadBack'
+import { Empty } from './Empty'
 
 /** ts: when the line started, ms since epoch (from the server event). */
 export type Line = { id: number; role: 'user' | 'assistant'; text: string; final: boolean; ts: number }
@@ -13,11 +14,14 @@ export function Transcript({ lines, phone }: { lines: Line[]; phone: string | nu
       <header className="section-head">
         <h2>Transcript</h2>
       </header>
-      <div className="chat__number">
-        <span className="label">Caller</span>
-        <ReadBack key={phone} phone={phone} />
-      </div>
-      {lines.length === 0 ? <p className="chat__empty">No conversation yet.</p> : <ChatLines lines={lines} />}
+      {/* the caller block appears with the conversation, not before */}
+      {(lines.length > 0 || phone) && (
+        <div className="chat__number">
+          <span className="label">Caller</span>
+          <ReadBack key={phone} phone={phone} />
+        </div>
+      )}
+      {lines.length === 0 ? <Empty>No conversation yet.</Empty> : <ChatLines lines={lines} />}
     </section>
   )
 }

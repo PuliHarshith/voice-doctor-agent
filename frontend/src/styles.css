@@ -663,11 +663,46 @@ button {
   border-bottom: 1px solid var(--line);
 }
 
-.chat__empty {
-  align-self: center;
+/* ---------- empty states ---------- */
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: var(--s1);
+  min-height: 160px;
   padding: var(--s3);
   text-align: center;
   color: var(--ink-2);
+}
+
+/* faint ruler: ticks every 8px, a longer one every 40px, and a marker that glides slowly along it */
+.ruler {
+  position: relative;
+  width: 160px;
+  height: 10px;
+  opacity: 0.7;
+  background:
+    repeating-linear-gradient(to right, var(--ink-3) 0 1px, transparent 1px 40px) bottom / 100% 10px no-repeat,
+    repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 8px) bottom / 100% 5px no-repeat;
+}
+
+.ruler::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--accent);
+  animation: glide 4s ease-in-out infinite alternate;
+}
+
+@keyframes glide {
+  to {
+    left: calc(100% - 2px);
+  }
 }
 
 .chat__lines {

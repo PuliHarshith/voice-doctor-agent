@@ -1,6 +1,7 @@
 import { slotKey, type Doctor } from '../api'
 import { dayOfMonth, formatTime, minutes, today, weekday } from '../format'
 import { useNow } from '../useNow'
+import { Empty } from './Empty'
 
 type Props = {
   doctors: Doctor[]
@@ -85,7 +86,7 @@ export function Schedule({ doctors, day, onDay, flashing }: Props) {
       </header>
 
       {allTimes.length === 0 ? (
-        <p className="empty">No open slots.</p>
+        <Empty>No open slots.</Empty>
       ) : (
         <div className="timeline">
           <div className="timeline__axis" aria-hidden="true">
